@@ -1,0 +1,9 @@
+{
+  "name": "소비자 데일리 브리핑",
+  "short_name": "데일리 브리핑",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f0e0c",
+  "theme_color": "#0f0e0c",
+  "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png"}]
+}
