@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f0e0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="데일리 브리핑">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>소비자 데일리 브리핑</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0f0e0c;
+    --paper: #f5f0e8;
+    --muted: #6b6457;
+    --border: #c4b99a;
+    --accent: #c8392b;
+    --gold: #b8860b;
+    --econ: #1a3a5c; --econ-bg: #e8eef5;
+    --politics: #2d5a27; --politics-bg: #e8f0e6;
+    --consumer: #7b3a10; --consumer-bg: #f5ede6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--paper); color: var(--ink); font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; }
+
+  /* ── 상단 헤더 ── */
+  header {
+    background: var(--ink); color: var(--paper);
+    padding: env(safe-area-inset-top, 0) 0 0;
+  }
+  .header-inner { padding: 20px 20px 16px; }
+  .header-row { display: flex; justify-content: space-between; align-items: flex-start; }
+  h1 { font-family: 'Noto Serif KR', serif; font-size: 1.4rem; font-weight: 700; line-height: 1.2; }
+  .header-sub { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: rgba(245,240,232,0.5); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 3px; }
+  .header-date { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: rgba(245,240,232,0.6); text-align: right; line-height: 1.6; }
+  .live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #4caf50; margin-right: 5px; animation: pulse 2s infinite; vertical-align: middle; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── 탭 ── */
+  .tabs { display: flex; border-top: 1px solid rgba(255,255,255,0.1); }
+  .tab {
+    flex: 1; padding: 11px 4px; background: transparent;
+    border: none; color: rgba(245,240,232,0.5);
+    font-family: 'Noto Sans KR', sans-serif; font-size: 0.72rem; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; border-bottom: 2px solid transparent;
+  }
+  .tab.active { color: var(--paper); border-bottom-color: var(--accent); }
+
+  /* ── 알림 배너 ── */
+  .notif-banner {
+    background: #1a3a5c; color: white;
+    padding: 10px 16px; font-size: 0.75rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    display: none;
+  }
+  .notif-banner.show { display: flex; }
+  .notif-btn { background: white; color: #1a3a5c; border: none; border-radius: 3px; padding: 5px 12px; font-size: 0.72rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+  /* ── 메인 콘텐츠 ── */
+  main { padding: 20px 16px 40px; max-width: 640px; margin: 0 auto; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .summary-box {
+    background: white; border: 1px solid var(--border); border-radius: 6px;
+    padding: 14px 16px; margin-bottom: 18px; font-size: 0.82rem;
+    line-height: 1.7; color: #2a2520;
+    box-shadow: 2px 2px 0 rgba(196,185,154,0.3);
+  }
+  .summary-box strong { font-family: 'Noto Serif KR', serif; font-size: 0.75rem; display: block; margin-bottom: 4px; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; font-weight: 400; }
+
+  .cards { display: flex; flex-direction: column; gap: 14px; }
+
+  .card { background: white; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 2px 2px 0 rgba(196,185,154,0.35); }
+  .card-stripe { height: 3px; }
+  .econ .card-stripe { background: var(--econ); }
+  .politics .card-stripe { background: var(--politics); }
+  .consumer .card-stripe { background: var(--consumer); }
+
+  .card-content { padding: 14px 16px 12px; }
+  .card-tag { display: inline-block; font-family: 'DM Mono', monospace; font-size: 0.58rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; border-radius: 2px; margin-bottom: 7px; }
+  .econ .card-tag { background: var(--econ-bg); color: var(--econ); }
+  .politics .card-tag { background: var(--politics-bg); color: var(--politics); }
+  .consumer .card-tag { background: var(--consumer-bg); color: var(--consumer); }
+
+  .card h3 { font-family: 'Noto Serif KR', serif; font-size: 0.95rem; font-weight: 700; line-height: 1.45; margin-bottom: 8px; }
+  .card p { font-size: 0.78rem; color: #3a3530; line-height: 1.75; }
+
+  .insight { margin-top: 10px; padding: 9px 11px; border-radius: 3px; font-size: 0.73rem; line-height: 1.6; border-left: 2px solid; }
+  .econ .insight { background: var(--econ-bg); border-color: var(--econ); color: var(--econ); }
+  .politics .insight { background: var(--politics-bg); border-color: var(--politics); color: var(--politics); }
+  .consumer .insight { background: var(--consumer-bg); border-color: var(--consumer); color: var(--consumer); }
+  .insight strong { display: block; font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-bottom: 2px; opacity: 0.75; }
+
+  /* ── 로딩 / 빈 화면 ── */
+  .loading, .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .spinner { width: 36px; height: 36px; border: 2px solid var(--border); border-top-color: var(--ink); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 14px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading p, .empty p { font-size: 0.8rem; line-height: 1.7; }
+
+  /* ── 푸터 업데이트 시간 ── */
+  .update-bar { text-align: center; padding: 8px; font-family: 'DM Mono', monospace; font-size: 0.62rem; color: var(--muted); border-top: 1px solid var(--border); margin-top: 30px; }
+
+  /* ── 설치 안내 ── */
+  .install-hint { background: var(--ink); color: var(--paper); border-radius: 8px; padding: 16px; margin-bottom: 20px; font-size: 0.78rem; line-height: 1.7; display: none; }
+  .install-hint.show { display: block; }
+  .install-hint strong { display: block; font-family: 'Noto Serif KR', serif; font-size: 0.9rem; margin-bottom: 6px; }
+  .install-hint button { background: var(--accent); color: white; border: none; border-radius: 4px; padding: 7px 16px; font-size: 0.75rem; font-weight: 700; cursor: pointer; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-row">
+      <div>
+        <h1>소비자 데일리 브리핑</h1>
+        <div class="header-sub">SNU · Consumer Studies</div>
+      </div>
+      <div class="header-date">
+        <span class="live-dot"></span><span id="hdate">—</span><br>
+        <span id="htime">—</span>
+      </div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('econ',this)">📈 경제</button>
+    <button class="tab" onclick="switchTab('politics',this)">🌐 정치·사회</button>
+    <button class="tab" onclick="switchTab('consumer',this)">🛒 소비자</button>
+  </div>
+</header>
+
+<div class="notif-banner" id="notif-banner">
+  <span>매일 오전 7시 알림을 받으세요</span>
+  <button class="notif-btn" onclick="requestNotif()">알림 켜기</button>
+</div>
+
+<main>
+  <div class="install-hint" id="install-hint">
+    <strong>📱 홈 화면에 추가하기</strong>
+    Safari에서 <b>공유 버튼 → 홈 화면에 추가</b>를 탭하면 앱처럼 사용할 수 있어요.
+    <button onclick="document.getElementById('install-hint').remove()">닫기</button>
+  </div>
+
+  <div class="panel active" id="panel-econ">
+    <div class="loading"><div class="spinner"></div><p>브리핑을 불러오는 중...</p></div>
+  </div>
+  <div class="panel" id="panel-politics">
+    <div class="loading"><div class="spinner"></div><p>브리핑을 불러오는 중...</p></div>
+  </div>
+  <div class="panel" id="panel-consumer">
+    <div class="loading"><div class="spinner"></div><p>브리핑을 불러오는 중...</p></div>
+  </div>
+
+  <div class="update-bar" id="update-bar"></div>
+</main>
+
+<script>
+// ── 날짜/시간 표시 ──
+const now = new Date();
+document.getElementById('hdate').textContent = now.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+document.getElementById('htime').textContent = now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+
+// ── 탭 전환 ──
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + id).classList.add('active');
+}
+
+// ── 카드 렌더링 ──
+function renderSection(id, data) {
+  const type = id;
+  if (!data || !data.cards || !data.cards.length) {
+    document.getElementById('panel-' + id).innerHTML =
+      '<div class="empty"><p>오늘의 데이터를 아직 불러오지 못했습니다.<br>잠시 후 다시 확인해주세요.</p></div>';
+    return;
+  }
+  const cards = data.cards.map(c => `
+    <div class="card ${type}">
+      <div class="card-stripe"></div>
+      <div class="card-content">
+        <span class="card-tag">${c.tag || ''}</span>
+        <h3>${c.headline || ''}</h3>
+        <p>${c.body || ''}</p>
+        ${c.insight ? `<div class="insight"><strong>🎓 소비자학 관점</strong>${c.insight}</div>` : ''}
+      </div>
+    </div>`).join('');
+  document.getElementById('panel-' + id).innerHTML = `
+    <div class="summary-box"><strong>오늘의 요약</strong>${data.summary || ''}</div>
+    <div class="cards">${cards}</div>`;
+}
+
+// ── JSON 브리핑 로드 ──
+async function loadBriefing() {
+  try {
+    const res = await fetch('briefing.json?t=' + Date.now());
+    if (!res.ok) throw new Error('not found');
+    const data = await res.json();
+    const s = data.sections || {};
+    renderSection('econ', s.econ);
+    renderSection('politics', s.politics);
+    renderSection('consumer', s.consumer);
+    document.getElementById('update-bar').textContent =
+      `마지막 업데이트: ${data.date_kr || '알 수 없음'}`;
+  } catch {
+    // 브리핑 파일 없으면 빈 화면
+    ['econ','politics','consumer'].forEach(id => {
+      document.getElementById('panel-' + id).innerHTML =
+        '<div class="empty"><p>아직 오늘의 브리핑이 생성되지 않았어요.<br>매일 오전 7시에 자동으로 업데이트됩니다.</p></div>';
+    });
+    document.getElementById('update-bar').textContent = '브리핑 대기 중...';
+  }
+}
+
+// ── Service Worker 등록 ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    console.log('SW 등록됨:', reg.scope);
+  });
+}
+
+// ── 알림 권한 요청 ──
+function requestNotif() {
+  Notification.requestPermission().then(p => {
+    if (p === 'granted') {
+      document.getElementById('notif-banner').classList.remove('show');
+      new Notification('알림이 설정되었습니다 ✅', {
+        body: '매일 오전 7시에 소비자 데일리 브리핑을 보내드릴게요!',
+        icon: 'icon-192.png'
+      });
+    }
+  });
+}
+
+// ── iOS 홈 화면 추가 안내 (Safari + 미설치 상태) ──
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+if (isIOS && !isStandalone) {
+  document.getElementById('install-hint').classList.add('show');
+}
+
+// ── 알림 배너 표시 (권한 미설정 시) ──
+if ('Notification' in window && Notification.permission === 'default') {
+  document.getElementById('notif-banner').classList.add('show');
+}
+
+// ── PWA 설치 프롬프트 (Android/Chrome) ──
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+});
+
+// ── 브리핑 로드 실행 ──
+loadBriefing();
+</script>
+</body>
+</html>
