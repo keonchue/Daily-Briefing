@@ -42,7 +42,7 @@ def fetch_section(prompt):
 def main():
     print(f"[{today}] 브리핑 생성 시작...")
     briefing = {"date": today_iso, "date_kr": today, "sections": {}}
-  for key, prompt in SECTIONS.items():
+    for key, prompt in SECTIONS.items():
         print(f"  -> {key} 수집 중...")
         try:
             briefing["sections"][key] = fetch_section(prompt)
