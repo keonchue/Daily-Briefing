@@ -1,0 +1,27 @@
+name: 소비자 데일리 브리핑 생성
+
+on:
+  schedule:
+    - cron: "0 22 * * *"
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install anthropic
+      - name: 브리핑 생성
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scripts/generate_briefing.py
+      - name: 커밋 푸시
+        run: |
+          git config --global user.name "Briefing Bot"
+          git config --global user.email "bot@briefing"
+          git add docs/briefing.json
+          git diff --staged --quiet || git commit -m "브리핑 업데이트: $(date +'%Y-%m-%d')"
+          git push
