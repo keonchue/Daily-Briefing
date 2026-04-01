@@ -50,8 +50,8 @@ def main():
         except Exception as e:
             print(f"  x {key} 실패: {e}")
             briefing["sections"][key] = {"summary": "오류 발생", "cards": []}
-    os.makedirs("pwa", exist_ok=True)
-    with open("pwa/briefing.json", "w", encoding="utf-8") as f:
+    os.makedirs("docs", exist_ok=True)
+    with open("docs/briefing.json", "w", encoding="utf-8") as f:
         json.dump(briefing, f, ensure_ascii=False, indent=2)
     print("완료!")
 
