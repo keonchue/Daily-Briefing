@@ -1,4 +1,4 @@
-import anthropic, json, os
+import anthropic, json, os, time
 from datetime import datetime, timezone, timedelta
 
 KST = timezone(timedelta(hours=9))
@@ -42,7 +42,7 @@ def fetch_section(prompt):
 def main():
     print(f"[{today}] 브리핑 생성 시작...")
     briefing = {"date": today_iso, "date_kr": today, "sections": {}}
-    for key, prompt in SECTIONS.items():
+  for key, prompt in SECTIONS.items():
         print(f"  -> {key} 수집 중...")
         try:
             briefing["sections"][key] = fetch_section(prompt)
@@ -50,6 +50,7 @@ def main():
         except Exception as e:
             print(f"  x {key} 실패: {e}")
             briefing["sections"][key] = {"summary": "오류 발생", "cards": []}
+        time.sleep(30)
     os.makedirs("docs", exist_ok=True)
     with open("docs/briefing.json", "w", encoding="utf-8") as f:
         json.dump(briefing, f, ensure_ascii=False, indent=2)
