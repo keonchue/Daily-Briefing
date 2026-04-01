@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f0e0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="데일리 브리핑">
+<link rel="manifest" href="manifest.json">
+<title>소비자 데일리 브리핑</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0f0e0c; --paper: #f5f0e8; --muted: #6b6457; --border: #c4b99a;
+    --accent: #c8392b;
+    --econ: #1a3a5c; --econ-bg: #e8eef5;
+    --politics: #2d5a27; --politics-bg: #e8f0e6;
+    --consumer: #7b3a10; --consumer-bg: #f5ede6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--paper); color: var(--ink); font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; }
+
+  header { background: var(--ink); color: var(--paper); padding-top: env(safe-area-inset-top, 0); }
+  .header-inner { padding: 20px 20px 0; }
+  .header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  h1 { font-family: 'Noto Serif KR', serif; font-size: 1.35rem; font-weight: 700; line-height: 1.2; }
+  .header-sub { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: rgba(245,240,232,0.5); letter-spacing: 0.12em; margin-top: 3px; }
+  .header-date { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: rgba(245,240,232,0.6); text-align: right; line-height: 1.7; }
+  .live { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #4caf50; margin-right: 4px; animation: blink 2s infinite; vertical-align: middle; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  .tabs { display: flex; border-top: 1px solid rgba(255,255,255,0.1); }
+  .tab { flex: 1; padding: 12px 4px; background: transparent; border: none; color: rgba(245,240,232,0.5); font-family: 'Noto Sans KR', sans-serif; font-size: 0.72rem; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .tab.on { color: var(--paper); border-bottom-color: var(--accent); }
+
+  .notif-bar { background: #1a3a5c; color: white; padding: 10px 16px; font-size: 0.75rem; display: none; align-items: center; justify-content: space-between; gap: 10px; }
+  .notif-bar.show { display: flex; }
+  .notif-btn { background: white; color: #1a3a5c; border: none; border-radius: 3px; padding: 5px 12px; font-size: 0.72rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+  main { padding: 20px 16px 60px; max-width: 640px; margin: 0 auto; }
+  .panel { display: none; animation: fadein 0.25s ease; }
+  .panel.on { display: block; }
+  @keyframes fadein { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+  .summary-box { background: white; border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; margin-bottom: 18px; font-size: 0.82rem; line-height: 1.7; color: #2a2520; box-shadow: 2px 2px 0 rgba(196,185,154,0.3); }
+  .summary-box strong { font-family: 'DM Mono', monospace; font-size: 0.62rem; display: block; margin-bottom: 5px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+  .cards { display: flex; flex-direction: column; gap: 14px; }
+  .card { background: white; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 2px 2px 0 rgba(196,185,154,0.35); }
+  .stripe { height: 3px; }
+  .econ .stripe { background: var(--econ); }
+  .politics .stripe { background: var(--politics); }
+  .consumer .stripe { background: var(--consumer); }
+  .card-body { padding: 14px 16px 12px; }
+  .tag { display: inline-block; font-family: 'DM Mono', monospace; font-size: 0.58rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; border-radius: 2px; margin-bottom: 7px; }
+  .econ .tag { background: var(--econ-bg); color: var(--econ); }
+  .politics .tag { background: var(--politics-bg); color: var(--politics); }
+  .consumer .tag { background: var(--consumer-bg); color: var(--consumer); }
+  .card h3 { font-family: 'Noto Serif KR', serif; font-size: 0.95rem; font-weight: 700; line-height: 1.45; margin-bottom: 8px; }
+  .card p { font-size: 0.78rem; color: #3a3530; line-height: 1.75; }
+  .insight { margin-top: 10px; padding: 9px 11px; border-radius: 3px; font-size: 0.73rem; line-height: 1.6; border-left: 2px solid; }
+  .econ .insight { background: var(--econ-bg); border-color: var(--econ); color: var(--econ); }
+  .politics .insight { background: var(--politics-bg); border-color: var(--politics); color: var(--politics); }
+  .consumer .insight { background: var(--consumer-bg); border-color: var(--consumer); color: var(--consumer); }
+  .insight strong { display: block; font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-bottom: 2px; opacity: 0.75; }
+
+  .loading, .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .spinner { width: 36px; height: 36px; border: 2px solid var(--border); border-top-color: var(--ink); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 14px; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .loading p, .empty p { font-size: 0.8rem; line-height: 1.7; }
+
+  .update-bar { text-align: center; padding: 8px; font-family: 'DM Mono', monospace; font-size: 0.62rem; color: var(--muted); border-top: 1px solid var(--border); margin-top: 30px; }
+
+  .ios-hint { background: var(--ink); color: var(--paper); border-radius: 8px; padding: 14px 16px; margin-bottom: 18px; font-size: 0.78rem; line-height: 1.7; display: none; }
+  .ios-hint.show { display: block; }
+  .ios-hint strong { display: block; font-family: 'Noto Serif KR', serif; font-size: 0.9rem; margin-bottom: 5px; }
+  .ios-hint button { background: var(--accent); color: white; border: none; border-radius: 4px; padding: 6px 14px; font-size: 0.72rem; font-weight: 700; cursor: pointer; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-row">
+      <div>
+        <h1>소비자 데일리 브리핑</h1>
+        <div class="header-sub">SNU · Consumer Studies</div>
+      </div>
+      <div class="header-date">
+        <span class="live"></span><span id="hdate"></span><br>
+        <span id="htime"></span>
+      </div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab on" onclick="switchTab('econ',this)">📈 경제</button>
+    <button class="tab" onclick="switchTab('politics',this)">🌐 정치·사회</button>
+    <button class="tab" onclick="switchTab('consumer',this)">🛒 소비자</button>
+  </div>
+</header>
+
+<div class="notif-bar" id="nbar">
+  <span>매일 오전 7시 알림 받기</span>
+  <button class="notif-btn" onclick="askNotif()">알림 켜기</button>
+</div>
+
+<main>
+  <div class="ios-hint" id="ios-hint">
+    <strong>📱 홈 화면에 추가하기</strong>
+    Safari 하단 공유 버튼 → "홈 화면에 추가" 를 탭하면 앱처럼 사용할 수 있어요.
+    <button onclick="this.closest('.ios-hint').remove()">닫기</button>
+  </div>
+
+  <div class="panel on" id="panel-econ"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
+  <div class="panel" id="panel-politics"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
+  <div class="panel" id="panel-consumer"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
+  <div class="update-bar" id="ubar"></div>
+</main>
+
+<script>
+const now = new Date();
+document.getElementById('hdate').textContent = now.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+document.getElementById('htime').textContent = now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('panel-' + id).classList.add('on');
+}
+
+function renderSection(id, data) {
+  if (!data || !data.cards || !data.cards.length) {
+    document.getElementById('panel-' + id).innerHTML = '<div class="empty"><p>아직 오늘의 브리핑이 없어요.<br>매일 오전 7시에 자동 업데이트됩니다.</p></div>';
+    return;
+  }
+  const cards = data.cards.map(c => `
+    <div class="card ${id}">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <span class="tag">${c.tag||''}</span>
+        <h3>${c.headline||''}</h3>
+        <p>${c.body||''}</p>
+        ${c.insight ? `<div class="insight"><strong>소비자학 관점</strong>${c.insight}</div>` : ''}
+      </div>
+    </div>`).join('');
+  document.getElementById('panel-' + id).innerHTML =
+    `<div class="summary-box"><strong>오늘의 요약</strong>${data.summary||''}</div><div class="cards">${cards}</div>`;
+}
+
+async function loadBriefing() {
+  try {
+    const res = await fetch('briefing.json?t=' + Date.now());
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const s = data.sections || {};
+    renderSection('econ', s.econ);
+    renderSection('politics', s.politics);
+    renderSection('consumer', s.consumer);
+    document.getElementById('ubar').textContent = '마지막 업데이트: ' + (data.date_kr || '—');
+  } catch {
+    ['econ','politics','consumer'].forEach(id => {
+      document.getElementById('panel-' + id).innerHTML = '<div class="empty"><p>브리핑을 불러오지 못했어요.<br>매일 오전 7시에 자동 업데이트됩니다.</p></div>';
+    });
+  }
+}
+
+function askNotif() {
+  Notification.requestPermission().then(p => {
+    document.getElementById('nbar').classList.remove('show');
+    if (p === 'granted') new Notification('알림 설정 완료!', { body: '매일 오전 7시에 브리핑을 보내드려요.' });
+  });
+}
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+if ('Notification' in window && Notification.permission === 'default') document.getElementById('nbar').classList.add('show');
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+if (isIOS && !isStandalone) document.getElementById('ios-hint').classList.add('show');
+
+loadBriefing();
+</script>
+</body>
+</html>
