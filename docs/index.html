@@ -144,6 +144,11 @@ function renderSection(id, data) {
         <h3>${c.headline||''}</h3>
         <p>${c.body||''}</p>
         ${c.insight ? `<div class="insight"><strong>소비자학 관점</strong>${c.insight}</div>` : ''}
+        ${c.sources && c.sources.length ? `
+          <div class="sources">
+            <span class="src-label">출처</span>
+            ${c.sources.map(s => `<a href="${s.url}" target="_blank" rel="noopener">${s.title}</a>`).join('')}
+          </div>` : ''}
       </div>
     </div>`).join('');
   document.getElementById('panel-' + id).innerHTML =
