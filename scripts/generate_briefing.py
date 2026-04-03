@@ -1,5 +1,8 @@
 import anthropic, json, os, time, re
+import urllib.request
+import urllib.parse
 from datetime import datetime, timezone, timedelta
+from xml.etree import ElementTree as ET
 
 KST = timezone(timedelta(hours=9))
 today = datetime.now(KST).strftime("%Y년 %m월 %d일")
@@ -7,76 +10,163 @@ today_iso = datetime.now(KST).strftime("%Y-%m-%d")
 
 client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
-SYSTEM = f"""당신은 서울대학교 소비자학과 학생을 위한 데일리 브리핑 어시스턴트입니다.
-웹 검색으로 {today} 기준 최신 정보를 수집하세요.
-반드시 순수 JSON만 반환하세요. 마크다운 코드블록이나 설명 없이 JSON만 출력하세요.
-모든 내용은 한국어로 작성하세요.
-JSON 문자열 안에 큰따옴표(")를 절대 사용하지 마세요. 작은따옴표나 다른 표현을 사용하세요."""
+HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; DailyBriefingBot/1.0)"}
 
-SECTIONS = {
-    "econ": f"""{today} 기준 한국 경제 상황을 웹 검색으로 조사하고 아래 JSON 형식으로만 반환하세요.
-{{"summary":"2문장 요약","cards":[{{"tag":"카테고리","headline":"제목","body":"설명","insight":"소비자학 관점","sources":[{{"title":"출처명","url":"URL"}}]}}]}}
-cards 3개. 기준금리, 환율, 주가 각각 다루기. 각 카드 sources에 실제 참고 URL 포함.""",
-    "politics": f"""{today} 기준 주요 정치·사회 이슈를 웹 검색으로 조사하고 아래 JSON 형식으로만 반환하세요.
-{{"summary":"2문장 요약","cards":[{{"tag":"카테고리","headline":"제목","body":"설명","insight":"소비자 영향","sources":[{{"title":"출처명","url":"URL"}}]}}]}}
-cards 3개. 국내외 주요 이슈. 각 카드 sources에 실제 참고 URL 포함.""",
-    "consumer": f"""{today} 기준 소비자 트렌드·마케팅 이슈를 웹 검색으로 조사하고 아래 JSON 형식으로만 반환하세요.
-{{"summary":"2문장 요약","cards":[{{"tag":"카테고리","headline":"제목","body":"설명","insight":"소비자학 이론 연결","sources":[{{"title":"출처명","url":"URL"}}]}}]}}
-cards 3개. 마케팅/MZ소비/ESG/유통 트렌드. 각 카드 sources에 실제 참고 URL 포함."""
+RSS_FEEDS = {
+    "econ": [
+        {"name": "매일경제", "url": "https://www.mk.co.kr/rss/40300001/"},
+        {"name": "한국경제", "url": "https://www.hankyung.com/feed/economy"},
+    ],
+    "politics": [
+        {"name": "연합뉴스", "url": "https://www.yna.co.kr/rss/politics.xml"},
+        {"name": "KBS뉴스", "url": "https://news.kbs.co.kr/rss/rss.do?cid=1"},
+    ],
+    "consumer": [
+        {"name": "소비자평가", "url": "https://www.iconsumer.or.kr/rss/allArticle.xml"},
+        {"name": "마케팅조선", "url": "https://marketing.chosun.com/rss/allArticle.xml"},
+        {"name": "한국소비자원", "url": "https://www.kca.go.kr/rss/news.xml"},
+    ],
 }
 
 
-def safe_parse_json(raw: str) -> dict:
-    """JSON을 안전하게 파싱합니다."""
-    # 코드블록 제거
-    raw = re.sub(r'```json|```', '', raw).strip()
-
-    # 첫 번째 { 부터 마지막 } 까지 추출
-    start = raw.find('{')
-    end = raw.rfind('}')
-    if start == -1 or end == -1:
-        raise ValueError("JSON 구조를 찾을 수 없음")
-
-    json_str = raw[start:end + 1]
-
-    # 파싱 시도
+def parse_rss(feed_url, source_name, limit=4):
     try:
-        return json.loads(json_str)
-    except json.JSONDecodeError:
-        # 제어문자 제거 후 재시도
-        json_str = re.sub(r'[\x00-\x1f\x7f]', ' ', json_str)
-        return json.loads(json_str)
+        req = urllib.request.Request(feed_url, headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=10) as res:
+            content = res.read()
+        root = ET.fromstring(content)
+        items = []
+        entries = root.findall(".//item") or root.findall(".//{http://www.w3.org/2005/Atom}entry")
+        for entry in entries[:limit]:
+            title = (entry.findtext("title") or entry.findtext("{http://www.w3.org/2005/Atom}title") or "")
+            link = (entry.findtext("link") or (entry.find("{http://www.w3.org/2005/Atom}link") or entry).get("href", "") or "")
+            desc = (entry.findtext("description") or entry.findtext("{http://www.w3.org/2005/Atom}summary") or "")
+            title = re.sub(r'<[^>]+>|\[CDATA\[|\]\]', '', title).strip()
+            desc = re.sub(r'<[^>]+>|\[CDATA\[|\]\]', '', desc).strip()[:200]
+            if title:
+                items.append({"title": title, "url": link.strip(), "desc": desc, "source": source_name})
+        print(f"     v {source_name}: {len(items)}건")
+        return items
+    except Exception as e:
+        print(f"     x {source_name} 실패: {e}")
+        return []
 
 
-def fetch_section(prompt: str) -> dict:
+def fetch_section_news(section):
+    news = []
+    for feed in RSS_FEEDS[section]:
+        news.extend(parse_rss(feed["url"], feed["name"]))
+        time.sleep(0.5)
+    return news[:8]
+
+
+def fetch_bok_indicators():
+    indicators = {"rate": "2.50% (2026년 2월 동결)", "news": [], "exchange": "알 수 없음", "kospi": "알 수 없음"}
+    try:
+        bok_rss = "https://www.bok.or.kr/portal/bbs/P0000559/list.do?menuNo=200690&rssYn=Y"
+        req = urllib.request.Request(bok_rss, headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=10) as res:
+            root = ET.fromstring(res.read())
+        for item in root.findall(".//item")[:3]:
+            title = re.sub(r'<[^>]+>', '', item.findtext("title", "")).strip()
+            link = item.findtext("link", "").strip()
+            if title:
+                indicators["news"].append({"title": title, "url": link, "source": "한국은행"})
+        print(f"     v 한국은행: {len(indicators['news'])}건")
+    except Exception as e:
+        print(f"     x 한국은행 RSS 실패: {e}")
+
+    try:
+        req = urllib.request.Request("https://open.er-api.com/v6/latest/USD", headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=10) as res:
+            data = json.loads(res.read())
+        krw = data.get("rates", {}).get("KRW", 0)
+        if krw:
+            indicators["exchange"] = f"1달러 = {krw:,.0f}원"
+            print(f"     v 환율: {indicators['exchange']}")
+    except Exception as e:
+        print(f"     x 환율 조회 실패: {e}")
+
+    try:
+        url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EKS11?interval=1d&range=2d"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=10) as res:
+            data = json.loads(res.read())
+        closes = data["chart"]["result"][0]["indicators"]["quote"][0]["close"]
+        last, prev = closes[-1], closes[-2] if len(closes) > 1 else closes[-1]
+        change = ((last - prev) / prev * 100) if prev else 0
+        arrow = "▲" if change >= 0 else "▼"
+        indicators["kospi"] = f"{last:,.2f} ({arrow}{abs(change):.2f}%)"
+        print(f"     v KOSPI: {indicators['kospi']}")
+    except Exception as e:
+        print(f"     x KOSPI 조회 실패: {e}")
+
+    return indicators
+
+
+def generate_with_claude(bok, econ_news, politics_news, consumer_news):
+    prompt = f"""아래는 {today} 기준 실제 수집된 데이터입니다.
+서울대 소비자학과 학생을 위한 데일리 브리핑 JSON을 작성하세요.
+
+=== 한국은행 경제지표 ===
+기준금리: {bok['rate']}
+원/달러 환율: {bok['exchange']}
+KOSPI: {bok['kospi']}
+한국은행 최신 보도: {json.dumps(bok['news'], ensure_ascii=False)}
+
+=== 경제 뉴스 (매일경제, 한국경제) ===
+{json.dumps(econ_news, ensure_ascii=False)}
+
+=== 정치·사회 뉴스 (연합뉴스, KBS) ===
+{json.dumps(politics_news, ensure_ascii=False)}
+
+=== 소비자·마케팅 뉴스 (소비자평가, 마케팅조선, 한국소비자원) ===
+{json.dumps(consumer_news, ensure_ascii=False)}
+
+아래 JSON 형식으로만 응답하세요. 코드블록 없이 순수 JSON만:
+{{"econ":{{"summary":"2문장 요약","cards":[{{"tag":"태그","headline":"제목","body":"2-3문장 설명. 수치 포함.","insight":"소비자학 관점","sources":[{{"title":"출처명","url":"기사URL"}}]}}]}},"politics":{{"summary":"2문장 요약","cards":[{{"tag":"태그","headline":"제목","body":"2-3문장 설명.","insight":"소비자 시장 영향","sources":[{{"title":"출처명","url":"기사URL"}}]}}]}},"consumer":{{"summary":"2문장 요약","cards":[{{"tag":"태그","headline":"제목","body":"2-3문장 설명.","insight":"소비자학 이론 연결","sources":[{{"title":"출처명","url":"기사URL"}}]}}]}}}}
+규칙: 각 섹션 cards 정확히 3개. sources url은 위 실제 기사 URL 사용. body와 insight에 큰따옴표 사용 금지."""
+
     response = client.messages.create(
-        model="claude-opus-4-5",
-        max_tokens=2000,
-        system=SYSTEM,
-        tools=[{"type": "web_search_20250305", "name": "web_search"}],
+        model="claude-haiku-4-5-20251001",
+        max_tokens=3000,
         messages=[{"role": "user", "content": prompt}]
     )
-    raw = "\n".join(
-        block.text for block in response.content if hasattr(block, "text")
-    )
-    print(f"    응답 길이: {len(raw)}자")
-    return safe_parse_json(raw)
+    raw = response.content[0].text
+    raw = re.sub(r'```json|```', '', raw).strip()
+    start = raw.find('{')
+    end = raw.rfind('}')
+    return json.loads(raw[start:end + 1])
 
 
 def main():
     print(f"[{today}] 브리핑 생성 시작...")
-    briefing = {"date": today_iso, "date_kr": today, "sections": {}}
 
-    for key, prompt in SECTIONS.items():
-        print(f"  -> {key} 수집 중...")
-        try:
-            briefing["sections"][key] = fetch_section(prompt)
-            print(f"  v {key} 완료")
-        except Exception as e:
-            print(f"  x {key} 실패: {e}")
-            briefing["sections"][key] = {"summary": "오류 발생", "cards": []}
-        time.sleep(60)
+    print("  -> 한국은행 지표 수집 중...")
+    bok = fetch_bok_indicators()
 
+    print("  -> 경제 뉴스 수집 중 (매일경제, 한국경제)...")
+    econ_news = fetch_section_news("econ")
+
+    print("  -> 정치·사회 뉴스 수집 중 (연합뉴스, KBS)...")
+    politics_news = fetch_section_news("politics")
+
+    print("  -> 소비자 뉴스 수집 중 (소비자평가, 마케팅조선, 한국소비자원)...")
+    consumer_news = fetch_section_news("consumer")
+
+    print("  -> Claude Haiku 분석 중 (1회 호출)...")
+    try:
+        sections = generate_with_claude(bok, econ_news, politics_news, consumer_news)
+        print("  v 분석 완료!")
+    except Exception as e:
+        print(f"  x 분석 실패: {e}")
+        sections = {
+            "econ": {"summary": "오류 발생", "cards": []},
+            "politics": {"summary": "오류 발생", "cards": []},
+            "consumer": {"summary": "오류 발생", "cards": []}
+        }
+
+    briefing = {"date": today_iso, "date_kr": today, "sections": sections}
     os.makedirs("docs", exist_ok=True)
     with open("docs/briefing.json", "w", encoding="utf-8") as f:
         json.dump(briefing, f, ensure_ascii=False, indent=2)
