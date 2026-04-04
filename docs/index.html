@@ -194,13 +194,15 @@
       renderSection('con', s.consumer);
 
       const econCards = (s.econ || {}).cards || [];
-      let tickerHtml = '';
-      econCards.forEach(c => {
-        if (c.headline) tickerHtml += `<div class="ti">${c.tag} <b>${c.headline.match(/[\d,.]+[%원달러]*/)?.[0] || ''}</b></div>`;
-      });
-      if (!tickerHtml) tickerHtml = `<div class="ti">업데이트: <b>${data.date_kr || '—'}</b></div>`;
-      document.getElementById('ticker').innerHTML = tickerHtml;
-
+      const allText = econCards.map(c => (c.body || '') + ' ' + (c.headline || '')).join(' ');
+      const kospi = allText.match(/KOSPI[가\s]*(\d[\d,]+\.?\d*)/)?.[1] || allText.match(/(\d[\d,]+\.?\d*)으로.*상승|하락/)?.[1] || '—';
+      const fx = allText.match(/(\d[\d,]+)원.*환율|환율.*(\d[\d,]+)원/)?.[1] || allText.match(/1달러\s*=\s*([\d,]+)원/)?.[1] || '—';
+      const rate = allText.match(/(\d+\.\d+)%.*금리|금리.*(\d+\.\d+)%/)?.[1] || allText.match(/기준금리\D*([\d.]+)%/)?.[1] || '—';
+      document.getElementById('ticker').innerHTML = `
+        <div class="ti">KOSPI <b>${kospi !== '—' ? kospi : '—'}</b></div>
+        <div class="ti">USD/KRW <b>${fx !== '—' ? fx + '원' : '—'}</b></div>
+        <div class="ti">기준금리 <b>${rate !== '—' ? rate + '%' : '—'}</b></div>
+        <div class="ti">업데이트 <b>${data.date_kr || '—'}</b></div>`;
       document.getElementById('ubar').textContent = '마지막 업데이트: ' + (data.date_kr || '—');
     } catch {
       ['econ','pol','con'].forEach(id => {
