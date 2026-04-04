@@ -3,114 +3,170 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0f0e0c">
+<meta name="theme-color" content="#000E5C">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="데일리 브리핑">
+<meta name="apple-mobile-web-app-title" content="Con 브리핑">
 <link rel="manifest" href="manifest.json">
 <title>소비자 데일리 브리핑</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23000E5C'/><g opacity='0.12'><ellipse cx='16' cy='11' rx='4.5' ry='5.5' stroke='white' stroke-width='1.2' fill='none'/><rect x='9' y='13.5' width='14' height='10' rx='0.8' stroke='white' stroke-width='1.2' fill='none'/><line x1='16' y1='13.5' x2='16' y2='23.5' stroke='white' stroke-width='0.8'/><path d='M9 14 Q6 13 5.5 15.5 Q5 18 7.5 19.5' stroke='white' stroke-width='0.8' fill='none' stroke-linecap='round'/><path d='M23 14 Q26 13 26.5 15.5 Q27 18 24.5 19.5' stroke='white' stroke-width='0.8' fill='none' stroke-linecap='round'/></g><text x='16' y='21' text-anchor='middle' font-family='Georgia,serif' font-size='13' fill='white' font-weight='bold'>Con</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  .sources { margin-top: 10px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .src-label { font-family: 'DM Mono', monospace; font-size: 0.58rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
-  .sources a { font-size: 0.68rem; color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border); padding-bottom: 1px; transition: color 0.15s; }
-  .sources a:hover { color: var(--ink); }
   :root {
-    --ink: #0f0e0c; --paper: #f5f0e8; --muted: #6b6457; --border: #c4b99a;
-    --accent: #c8392b;
-    --econ: #1a3a5c; --econ-bg: #e8eef5;
-    --politics: #2d5a27; --politics-bg: #e8f0e6;
-    --consumer: #7b3a10; --consumer-bg: #f5ede6;
+    --navy: #000E5C;
+    --gold: #C9B072;
+    --bg: #FAF8F5;
+    --border: rgba(0,14,92,0.08);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { background: var(--paper); color: var(--ink); font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; }
+  body { background: var(--bg); color: #111; font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; }
 
-  header { background: var(--ink); color: var(--paper); padding-top: env(safe-area-inset-top, 0); }
-  .header-inner { padding: 20px 20px 0; }
-  .header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-  h1 { font-family: 'Noto Serif KR', serif; font-size: 1.35rem; font-weight: 700; line-height: 1.2; }
-  .header-sub { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: rgba(245,240,232,0.5); letter-spacing: 0.12em; margin-top: 3px; }
-  .header-date { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: rgba(245,240,232,0.6); text-align: right; line-height: 1.7; }
-  .live { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #4caf50; margin-right: 4px; animation: blink 2s infinite; vertical-align: middle; }
+  /* ── 헤더 ── */
+  .hd { background: #00112E; position: relative; overflow: hidden; padding-top: env(safe-area-inset-top, 0); }
+  .hd-watermark { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0.055; pointer-events: none; }
+  .hd-inner { max-width: 1080px; margin: 0 auto; padding: 24px 24px 0; position: relative; z-index: 1; }
+  .hd-top { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; gap: 12px; flex-wrap: wrap; }
+  .logo-area { display: flex; align-items: center; gap: 14px; }
+  .eyebrow { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.18em; color: var(--gold); text-transform: uppercase; margin-bottom: 6px; }
+  .main-title { font-family: 'Noto Serif KR', serif; font-size: 24px; font-weight: 700; color: #FAF8F5; letter-spacing: -0.02em; line-height: 1.1; }
+  .meta { text-align: right; }
+  .meta-date { font-family: 'Noto Serif KR', serif; font-size: 14px; color: rgba(250,248,245,0.9); }
+  .meta-time { font-family: 'DM Mono', monospace; font-size: 10px; color: rgba(250,248,245,0.35); margin-top: 3px; }
+  .live { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); margin-right: 5px; vertical-align: middle; animation: blink 2s infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .sep { height: 1px; background: rgba(201,176,114,0.18); }
+  .tabs { display: flex; max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .tab { flex: 1; padding: 13px 8px; text-align: center; font-size: 12px; font-weight: 400; color: rgba(250,248,245,0.38); border: none; background: transparent; cursor: pointer; border-bottom: 2px solid transparent; letter-spacing: 0.03em; transition: all 0.2s; font-family: 'Noto Sans KR', sans-serif; }
+  .tab.on { color: #FAF8F5; border-bottom-color: var(--gold); font-weight: 500; }
 
-  .tabs { display: flex; border-top: 1px solid rgba(255,255,255,0.1); }
-  .tab { flex: 1; padding: 12px 4px; background: transparent; border: none; color: rgba(245,240,232,0.5); font-family: 'Noto Sans KR', sans-serif; font-size: 0.72rem; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
-  .tab.on { color: var(--paper); border-bottom-color: var(--accent); }
+  /* ── 티커 ── */
+  .ticker { background: #000C22; padding: 8px 24px; font-family: 'DM Mono', monospace; font-size: 11px; display: flex; gap: 28px; overflow-x: auto; }
+  .ticker::-webkit-scrollbar { display: none; }
+  .ti { color: rgba(250,248,245,0.4); white-space: nowrap; }
+  .ti b { color: rgba(250,248,245,0.85); font-weight: 400; margin-left: 6px; }
+  .up { color: #66BB6A !important; }
+  .dn { color: #EF5350 !important; }
 
-  .notif-bar { background: #1a3a5c; color: white; padding: 10px 16px; font-size: 0.75rem; display: none; align-items: center; justify-content: space-between; gap: 10px; }
-  .notif-bar.show { display: flex; }
-  .notif-btn { background: white; color: #1a3a5c; border: none; border-radius: 3px; padding: 5px 12px; font-size: 0.72rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
-
-  main { padding: 20px 16px 60px; max-width: 640px; margin: 0 auto; }
+  /* ── 메인 ── */
+  .main { max-width: 1080px; margin: 0 auto; padding: 24px 24px 60px; }
   .panel { display: none; animation: fadein 0.25s ease; }
   .panel.on { display: block; }
-  @keyframes fadein { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+  @keyframes fadein { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:none} }
 
-  .summary-box { background: white; border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; margin-bottom: 18px; font-size: 0.82rem; line-height: 1.7; color: #2a2520; box-shadow: 2px 2px 0 rgba(196,185,154,0.3); }
-  .summary-box strong { font-family: 'DM Mono', monospace; font-size: 0.62rem; display: block; margin-bottom: 5px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  /* ── 요약 ── */
+  .summary { border-left: 3px solid var(--gold); padding: 13px 18px; margin-bottom: 22px; background: rgba(201,176,114,0.06); border-radius: 0 8px 8px 0; }
+  .sum-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: var(--gold); text-transform: uppercase; margin-bottom: 6px; }
+  .sum-text { font-size: 14px; color: #555; line-height: 1.85; font-weight: 300; }
 
-  .cards { display: flex; flex-direction: column; gap: 14px; }
-  .card { background: white; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 2px 2px 0 rgba(196,185,154,0.35); }
-  .stripe { height: 3px; }
-  .econ .stripe { background: var(--econ); }
-  .politics .stripe { background: var(--politics); }
-  .consumer .stripe { background: var(--consumer); }
-  .card-body { padding: 14px 16px 12px; }
-  .tag { display: inline-block; font-family: 'DM Mono', monospace; font-size: 0.58rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; border-radius: 2px; margin-bottom: 7px; }
-  .econ .tag { background: var(--econ-bg); color: var(--econ); }
-  .politics .tag { background: var(--politics-bg); color: var(--politics); }
-  .consumer .tag { background: var(--consumer-bg); color: var(--consumer); }
-  .card h3 { font-family: 'Noto Serif KR', serif; font-size: 0.95rem; font-weight: 700; line-height: 1.45; margin-bottom: 8px; }
-  .card p { font-size: 0.78rem; color: #3a3530; line-height: 1.75; }
-  .insight { margin-top: 10px; padding: 9px 11px; border-radius: 3px; font-size: 0.73rem; line-height: 1.6; border-left: 2px solid; }
-  .econ .insight { background: var(--econ-bg); border-color: var(--econ); color: var(--econ); }
-  .politics .insight { background: var(--politics-bg); border-color: var(--politics); color: var(--politics); }
-  .consumer .insight { background: var(--consumer-bg); border-color: var(--consumer); color: var(--consumer); }
-  .insight strong { display: block; font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-bottom: 2px; opacity: 0.75; }
+  /* ── 그리드 ── */
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  @media (min-width: 480px) and (max-width: 720px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
-  .loading, .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
-  .spinner { width: 36px; height: 36px; border: 2px solid var(--border); border-top-color: var(--ink); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 14px; }
-  @keyframes spin { to{transform:rotate(360deg)} }
-  .loading p, .empty p { font-size: 0.8rem; line-height: 1.7; }
+  /* ── 카드 ── */
+  .card { background: white; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--border); }
+  .card-bar { height: 3px; background: var(--navy); }
+  .card.pol .card-bar { background: #1B5E3B; }
+  .card.con .card-bar { background: #7B4A00; }
+  .card-inner { padding: 18px 18px 14px; flex: 1; display: flex; flex-direction: column; }
+  .tag { display: inline-block; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; margin-bottom: 12px; background: rgba(0,14,92,0.07); color: var(--navy); }
+  .card.pol .tag { background: rgba(27,94,59,0.07); color: #1B5E3B; }
+  .card.con .tag { background: rgba(123,74,0,0.07); color: #7B4A00; }
+  .headline { font-family: 'Noto Serif KR', serif; font-size: 16px; font-weight: 600; line-height: 1.55; margin-bottom: 10px; color: #111827; }
+  .body-text { font-size: 13px; color: #6B7280; line-height: 1.85; flex: 1; font-weight: 300; }
+  .insight { margin-top: 13px; padding: 12px 14px; border-radius: 8px; font-size: 12.5px; line-height: 1.7; background: #F5F6FF; color: #374151; border: 1px solid rgba(0,14,92,0.07); }
+  .card.pol .insight { background: #F0FFF4; border-color: rgba(27,94,59,0.08); }
+  .card.con .insight { background: #FFFBF5; border-color: rgba(123,74,0,0.08); }
+  .i-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; display: block; margin-bottom: 4px; color: var(--navy); opacity: 0.55; }
+  .card.pol .i-label { color: #1B5E3B; }
+  .card.con .i-label { color: #7B4A00; }
+  .sources { margin-top: 13px; padding-top: 10px; border-top: 1px solid #F3F0EA; display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+  .src-label { font-family: 'DM Mono', monospace; font-size: 9px; color: #C4BFB5; letter-spacing: 0.08em; text-transform: uppercase; }
+  .src-link { font-size: 12px; color: var(--navy); text-decoration: none; opacity: 0.6; border-bottom: 1px solid var(--gold); padding-bottom: 1px; transition: opacity 0.15s; }
+  .src-link:hover { opacity: 1; }
 
-  .update-bar { text-align: center; padding: 8px; font-family: 'DM Mono', monospace; font-size: 0.62rem; color: var(--muted); border-top: 1px solid var(--border); margin-top: 30px; }
+  /* ── 로딩/빈 화면 ── */
+  .loading, .empty { text-align: center; padding: 60px 20px; color: #aaa; }
+  .spinner { width: 32px; height: 32px; border: 2px solid #e5e0d5; border-top-color: var(--navy); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 14px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading p, .empty p { font-size: 13px; line-height: 1.7; }
 
-  .ios-hint { background: var(--ink); color: var(--paper); border-radius: 8px; padding: 14px 16px; margin-bottom: 18px; font-size: 0.78rem; line-height: 1.7; display: none; }
+  /* ── 알림 배너 ── */
+  .notif-bar { background: var(--navy); color: white; padding: 9px 20px; font-size: 13px; display: none; align-items: center; justify-content: space-between; gap: 12px; }
+  .notif-bar.show { display: flex; }
+  .notif-btn { background: var(--gold); color: var(--navy); border: none; border-radius: 4px; padding: 5px 14px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: 'Noto Sans KR', sans-serif; }
+
+  .ios-hint { background: var(--navy); color: #FAF8F5; border-radius: 8px; padding: 14px 18px; margin-bottom: 18px; font-size: 13px; line-height: 1.7; display: none; }
   .ios-hint.show { display: block; }
-  .ios-hint strong { display: block; font-family: 'Noto Serif KR', serif; font-size: 0.9rem; margin-bottom: 5px; }
-  .ios-hint button { background: var(--accent); color: white; border: none; border-radius: 4px; padding: 6px 14px; font-size: 0.72rem; font-weight: 700; cursor: pointer; margin-top: 6px; }
+  .ios-hint strong { display: block; font-family: 'Noto Serif KR', serif; font-size: 15px; margin-bottom: 5px; }
+  .ios-hint button { background: var(--gold); color: var(--navy); border: none; border-radius: 4px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+
+  .update-bar { text-align: center; padding: 8px; font-family: 'DM Mono', monospace; font-size: 10px; color: #bbb; border-top: 1px solid #ece8e0; margin-top: 32px; }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="header-inner">
-    <div class="header-row">
-      <div>
-        <h1>소비자 데일리 브리핑</h1>
-        <div class="header-sub">SNU · Consumer Studies</div>
-      </div>
-      <div class="header-date">
-        <span class="live"></span><span id="hdate"></span><br>
-        <span id="htime"></span>
-      </div>
-    </div>
-  </div>
-  <div class="tabs">
-    <button class="tab on" onclick="switchTab('econ',this)">📈 경제</button>
-    <button class="tab" onclick="switchTab('politics',this)">🌐 정치·사회</button>
-    <button class="tab" onclick="switchTab('consumer',this)">🛒 소비자</button>
-  </div>
-</header>
-
 <div class="notif-bar" id="nbar">
-  <span>매일 오전 7시 알림 받기</span>
+  <span>매일 오전 7시 브리핑 알림 받기</span>
   <button class="notif-btn" onclick="askNotif()">알림 켜기</button>
 </div>
 
-<main>
+<div class="hd">
+  <div class="hd-watermark">
+    <svg width="420" height="420" viewBox="0 0 200 200" fill="none">
+      <ellipse cx="100" cy="72" rx="22" ry="27" stroke="white" stroke-width="3" fill="none"/>
+      <rect x="62" y="85" width="76" height="54" rx="2" stroke="white" stroke-width="3" fill="none"/>
+      <line x1="100" y1="85" x2="100" y2="139" stroke="white" stroke-width="2"/>
+      <text x="66" y="110" font-size="11" font-family="serif" fill="white" font-weight="bold">VERI</text>
+      <text x="66" y="126" font-size="11" font-family="serif" fill="white" font-weight="bold">TAS</text>
+      <text x="103" y="110" font-size="11" font-family="serif" fill="white" font-weight="bold">LUX</text>
+      <text x="103" y="126" font-size="11" font-family="serif" fill="white" font-weight="bold">MEA</text>
+      <path d="M62 86 Q50 82 48 90 Q46 100 54 106 Q58 109 62 108" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M138 86 Q150 82 152 90 Q154 100 146 106 Q142 109 138 108" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M50 97 Q44 94 44 100 Q44 106 50 108" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M150 97 Q156 94 156 100 Q156 106 150 108" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <div class="hd-inner">
+    <div class="hd-top">
+      <div class="logo-area">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <ellipse cx="24" cy="16" rx="6.5" ry="8" stroke="#C9B072" stroke-width="1.5" fill="none"/>
+          <rect x="13" y="20" width="22" height="16" rx="1" stroke="#C9B072" stroke-width="1.5" fill="none"/>
+          <line x1="24" y1="20" x2="24" y2="36" stroke="#C9B072" stroke-width="1"/>
+          <text x="14.5" y="29" font-size="3.8" font-family="serif" fill="#C9B072" font-weight="bold">VERI</text>
+          <text x="14.5" y="34" font-size="3.8" font-family="serif" fill="#C9B072" font-weight="bold">TAS</text>
+          <text x="25" y="29" font-size="3.8" font-family="serif" fill="#C9B072" font-weight="bold">LUX</text>
+          <text x="25" y="34" font-size="3.8" font-family="serif" fill="#C9B072" font-weight="bold">MEA</text>
+          <path d="M13 21 Q9 19 8 23 Q7 27 11 29.5" stroke="#C9B072" stroke-width="1" fill="none" stroke-linecap="round"/>
+          <path d="M35 21 Q39 19 40 23 Q41 27 37 29.5" stroke="#C9B072" stroke-width="1" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <div class="eyebrow">Seoul National University · Consumer Studies</div>
+          <div class="main-title">소비자 데일리 브리핑</div>
+        </div>
+      </div>
+      <div class="meta">
+        <div class="meta-date"><span class="live"></span><span id="hdate"></span></div>
+        <div class="meta-time" id="htime"></div>
+      </div>
+    </div>
+  </div>
+  <div class="sep"></div>
+  <div class="tabs">
+    <button class="tab on" onclick="switchTab('econ',this)">경제 상황</button>
+    <button class="tab" onclick="switchTab('pol',this)">정치·사회</button>
+    <button class="tab" onclick="switchTab('con',this)">소비자 이슈</button>
+  </div>
+</div>
+
+<div class="ticker" id="ticker">
+  <div class="ti">브리핑 로딩 중...</div>
+</div>
+
+<div class="main">
   <div class="ios-hint" id="ios-hint">
     <strong>📱 홈 화면에 추가하기</strong>
     Safari 하단 공유 버튼 → "홈 화면에 추가" 를 탭하면 앱처럼 사용할 수 있어요.
@@ -118,78 +174,96 @@
   </div>
 
   <div class="panel on" id="panel-econ"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
-  <div class="panel" id="panel-politics"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
-  <div class="panel" id="panel-consumer"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
+  <div class="panel" id="panel-pol"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
+  <div class="panel" id="panel-con"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
   <div class="update-bar" id="ubar"></div>
-</main>
+</div>
 
 <script>
-const now = new Date();
-document.getElementById('hdate').textContent = now.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
-document.getElementById('htime').textContent = now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+  const now = new Date();
+  document.getElementById('hdate').textContent = now.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+  document.getElementById('htime').textContent = now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) + ' 업데이트';
 
-function switchTab(id, btn) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
-  btn.classList.add('on');
-  document.getElementById('panel-' + id).classList.add('on');
-}
-
-function renderSection(id, data) {
-  if (!data || !data.cards || !data.cards.length) {
-    document.getElementById('panel-' + id).innerHTML = '<div class="empty"><p>아직 오늘의 브리핑이 없어요.<br>매일 오전 7시에 자동 업데이트됩니다.</p></div>';
-    return;
+  function switchTab(id, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+    btn.classList.add('on');
+    document.getElementById('panel-' + id).classList.add('on');
   }
-  const cards = data.cards.map(c => `
-    <div class="card ${id}">
-      <div class="stripe"></div>
-      <div class="card-body">
-        <span class="tag">${c.tag||''}</span>
-        <h3>${c.headline||''}</h3>
-        <p>${c.body||''}</p>
-        ${c.insight ? `<div class="insight"><strong>소비자학 관점</strong>${c.insight}</div>` : ''}
-        ${c.sources && c.sources.length ? `
-          <div class="sources">
-            <span class="src-label">출처</span>
-            ${c.sources.map(s => `<a href="${s.url}" target="_blank" rel="noopener">${s.title}</a>`).join('')}
-          </div>` : ''}
-      </div>
-    </div>`).join('');
-  document.getElementById('panel-' + id).innerHTML =
-    `<div class="summary-box"><strong>오늘의 요약</strong>${data.summary||''}</div><div class="cards">${cards}</div>`;
-}
 
-async function loadBriefing() {
-  try {
-    const res = await fetch('briefing.json?t=' + Date.now());
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-    const s = data.sections || {};
-    renderSection('econ', s.econ);
-    renderSection('politics', s.politics);
-    renderSection('consumer', s.consumer);
-    document.getElementById('ubar').textContent = '마지막 업데이트: ' + (data.date_kr || '—');
-  } catch {
-    ['econ','politics','consumer'].forEach(id => {
-      document.getElementById('panel-' + id).innerHTML = '<div class="empty"><p>브리핑을 불러오지 못했어요.<br>매일 오전 7시에 자동 업데이트됩니다.</p></div>';
+  function typeClass(id) {
+    return id === 'econ' ? '' : id === 'pol' ? 'pol' : 'con';
+  }
+
+  function renderSection(id, data) {
+    const tc = typeClass(id);
+    if (!data || !data.cards || !data.cards.length) {
+      document.getElementById('panel-' + id).innerHTML = '<div class="empty"><p>아직 오늘의 브리핑이 없어요.<br>매일 오전 7시에 자동 업데이트됩니다.</p></div>';
+      return;
+    }
+    const cards = data.cards.map(c => `
+      <div class="card ${tc}">
+        <div class="card-bar"></div>
+        <div class="card-inner">
+          <span class="tag">${c.tag||''}</span>
+          <div class="headline">${c.headline||''}</div>
+          <div class="body-text">${c.body||''}</div>
+          ${c.insight ? `<div class="insight"><span class="i-label">소비자학 관점</span>${c.insight}</div>` : ''}
+          ${c.sources && c.sources.length ? `
+            <div class="sources">
+              <span class="src-label">출처</span>
+              ${c.sources.map(s => `<a class="src-link" href="${s.url}" target="_blank" rel="noopener">${s.title}</a>`).join('')}
+            </div>` : ''}
+        </div>
+      </div>`).join('');
+    document.getElementById('panel-' + id).innerHTML = `
+      <div class="summary"><div class="sum-label">오늘의 요약</div><div class="sum-text">${data.summary||''}</div></div>
+      <div class="grid">${cards}</div>`;
+  }
+
+  async function loadBriefing() {
+    try {
+      const res = await fetch('briefing.json?t=' + Date.now());
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const s = data.sections || {};
+      renderSection('econ', s.econ);
+      renderSection('pol', s.politics);
+      renderSection('con', s.consumer);
+
+      // 티커 업데이트
+      const econ = s.econ || {};
+      const cards = econ.cards || [];
+      const rate = cards.find(c => c.tag && c.tag.includes('금리'));
+      const fx = cards.find(c => c.tag && c.tag.includes('환율'));
+      const kospi = cards.find(c => c.tag && c.tag.includes('주'));
+      document.getElementById('ticker').innerHTML = `
+        <div class="ti">KOSPI <b>${kospi ? kospi.headline.match(/[\d,]+\.?\d*/)?.[0] || '—' : '—'}</b></div>
+        <div class="ti">기준금리 <b>2.50%</b></div>
+        <div class="ti">업데이트 <b>${data.date_kr || '—'}</b></div>`;
+
+      document.getElementById('ubar').textContent = '마지막 업데이트: ' + (data.date_kr || '—');
+    } catch {
+      ['econ','pol','con'].forEach(id => {
+        document.getElementById('panel-' + id).innerHTML = '<div class="empty"><p>브리핑을 불러오지 못했어요.<br>매일 오전 7시에 자동 업데이트됩니다.</p></div>';
+      });
+    }
+  }
+
+  function askNotif() {
+    Notification.requestPermission().then(p => {
+      document.getElementById('nbar').classList.remove('show');
+      if (p === 'granted') new Notification('알림 설정 완료!', { body: '매일 오전 7시에 브리핑을 보내드려요.' });
     });
   }
-}
 
-function askNotif() {
-  Notification.requestPermission().then(p => {
-    document.getElementById('nbar').classList.remove('show');
-    if (p === 'granted') new Notification('알림 설정 완료!', { body: '매일 오전 7시에 브리핑을 보내드려요.' });
-  });
-}
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+  if ('Notification' in window && Notification.permission === 'default') document.getElementById('nbar').classList.add('show');
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  if (isIOS && !isStandalone) document.getElementById('ios-hint').classList.add('show');
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
-if ('Notification' in window && Notification.permission === 'default') document.getElementById('nbar').classList.add('show');
-const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-if (isIOS && !isStandalone) document.getElementById('ios-hint').classList.add('show');
-
-loadBriefing();
+  loadBriefing();
 </script>
 </body>
 </html>
