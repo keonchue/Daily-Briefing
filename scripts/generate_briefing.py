@@ -126,8 +126,10 @@ def generate_with_claude(bok, econ_news, politics_news, consumer_news):
     prompt = f"""아래는 {today} 기준 실제 수집된 뉴스입니다.
 서울대 소비자학과 학생을 위한 브리핑 JSON을 작성하세요.
 
-=== 경제 지표 ===
-기준금리: {bok['rate']} / 환율: {bok['exchange']} / KOSPI: {bok['kospi']}
+=== 경제 지표 (반드시 econ 카드에 포함할것) ===
+한국은행 기준금리: {bok['rate']}
+원달러환율: {bok['exchange']}
+KOSPI지수: {bok['kospi']}
 
 === 경제 뉴스 (ID: E0~E7) ===
 {json.dumps(econ_indexed, ensure_ascii=False)}
