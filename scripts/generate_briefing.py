@@ -120,23 +120,46 @@ KOSPI: {bok['kospi']}
 === 정치·사회 뉴스 (연합뉴스, KBS) ===
 {json.dumps(politics_news, ensure_ascii=False)}
 
-=== 소비자·마케팅 뉴스 (소비자평가, 마케팅조선, 한국소비자원) ===
+=== 소비자·마케팅 뉴스 (소비자평가, 한국소비자원) ===
 {json.dumps(consumer_news, ensure_ascii=False)}
 
-아래 JSON 형식으로만 응답하세요. 코드블록 없이 순수 JSON만:
-{{"econ":{{"summary":"2문장 요약","cards":[{{"tag":"태그","headline":"제목","body":"2-3문장 설명. 수치 포함.","insight":"소비자학 관점","sources":[{{"title":"출처명","url":"기사URL"}}]}}]}},"politics":{{"summary":"2문장 요약","cards":[{{"tag":"태그","headline":"제목","body":"2-3문장 설명.","insight":"소비자 시장 영향","sources":[{{"title":"출처명","url":"기사URL"}}]}}]}},"consumer":{{"summary":"2문장 요약","cards":[{{"tag":"태그","headline":"제목","body":"2-3문장 설명.","insight":"소비자학 이론 연결","sources":[{{"title":"출처명","url":"기사URL"}}]}}]}}}}
-규칙: 각 섹션 cards 정확히 3개. sources url은 위 실제 기사 URL 사용. body와 insight에 큰따옴표 사용 금지."""
+다음 JSON 형식으로 응답하세요. 반드시 지켜야 할 규칙:
+1. 코드블록(```) 없이 JSON만 출력
+2. 문자열 안에 큰따옴표 절대 금지 (작은따옴표도 금지, 그냥 쓰지 마세요)
+3. 각 섹션 cards 정확히 3개
+4. sources url은 위 실제 기사 URL 사용
+
+{{"econ":{{"summary":"요약","cards":[{{"tag":"태그","headline":"제목","body":"설명","insight":"관점","sources":[{{"title":"출처","url":"URL"}}]}}]}},"politics":{{"summary":"요약","cards":[{{"tag":"태그","headline":"제목","body":"설명","insight":"관점","sources":[{{"title":"출처","url":"URL"}}]}}]}},"consumer":{{"summary":"요약","cards":[{{"tag":"태그","headline":"제목","body":"설명","insight":"관점","sources":[{{"title":"출처","url":"URL"}}]}}]}}}}"""
 
     response = client.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=3000,
+        max_tokens=4000,
         messages=[{"role": "user", "content": prompt}]
     )
     raw = response.content[0].text
+    print(f"    Claude 응답 길이: {len(raw)}자")
+
+    # 코드블록 제거
     raw = re.sub(r'```json|```', '', raw).strip()
+
+    # { 부터 } 까지만 추출
     start = raw.find('{')
     end = raw.rfind('}')
-    return json.loads(raw[start:end + 1])
+    if start == -1 or end == -1:
+        raise ValueError("JSON을 찾을 수 없음")
+    json_str = raw[start:end+1]
+
+    # 제어문자 제거
+    json_str = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', json_str)
+
+    # 줄바꿈을 공백으로 (문자열 안의 줄바꿈 처리)
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError as e:
+        print(f"    1차 파싱 실패: {e}")
+        # 문자열 내 줄바꿈 제거 후 재시도
+        json_str = re.sub(r'\n\s*', ' ', json_str)
+        return json.loads(json_str)
 
 
 def main():
