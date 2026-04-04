@@ -160,9 +160,12 @@ def generate_with_claude(bok, econ_news, politics_news, consumer_news):
   }}
 }}
 규칙:
-- 각 섹션 cards 정확히 3개
-- source_ids에는 위 ID(E0, P1, C2 등)만 사용. URL 직접 쓰지 말것
-- 문자열 안에 큰따옴표 절대 금지"""
+1. 각 섹션 cards 정확히 3개
+2. source_ids에는 위 ID만 사용
+3. body와 insight 문장에 큰따옴표 절대 사용 금지
+4. 숫자와 단위 사이 공백 없이 붙여쓰기 (예: 5377.30포인트, 1510원, 2.50%)
+5. econ 첫번째 카드 body에 반드시 KOSPI 수치와 환율 수치를 포함할것
+   예시: KOSPI는 5377.30으로 상승했으며 원달러환율은 1510원을 기록했다."""
 
     response = client.messages.create(
         model="claude-haiku-4-5-20251001",
