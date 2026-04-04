@@ -195,9 +195,9 @@
 
       const econCards = (s.econ || {}).cards || [];
       const allText = econCards.map(c => (c.body || '') + ' ' + (c.headline || '')).join(' ');
-      const kospi = allText.match(/KOSPI[가\s]*(\d[\d,]+\.?\d*)/)?.[1] || allText.match(/(\d[\d,]+\.?\d*)으로.*상승|하락/)?.[1] || '—';
-      const fx = allText.match(/(\d[\d,]+)원.*환율|환율.*(\d[\d,]+)원/)?.[1] || allText.match(/1달러\s*=\s*([\d,]+)원/)?.[1] || '—';
-      const rate = allText.match(/(\d+\.\d+)%.*금리|금리.*(\d+\.\d+)%/)?.[1] || allText.match(/기준금리\D*([\d.]+)%/)?.[1] || '—';
+      const kospi = allText.match(/KOSPI[가는이]?\s*([\d,]+\.?\d*)/i)?.[1] || '—';
+      const fx = allText.match(/원달러환율[은이]?\s*([\d,]+)원/)?.[1] || allText.match(/([\d,]+)원을\s*기록/)?.[1] || allText.match(/(1[,\d]+)원/)?.[1] || '—';
+      const rate = allText.match(/기준금리[를을]?\s*([\d.]+)%/)?.[1] || allText.match(/([\d.]+)%로\s*동결/)?.[1] || '—';
       document.getElementById('ticker').innerHTML = `
         <div class="ti">KOSPI <b>${kospi !== '—' ? kospi : '—'}</b></div>
         <div class="ti">USD/KRW <b>${fx !== '—' ? fx + '원' : '—'}</b></div>
