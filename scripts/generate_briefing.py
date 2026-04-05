@@ -102,10 +102,39 @@ def fetch_bok_indicators():
     return indicators
 
 
-def generate_with_claude(bok, econ_news, politics_news, consumer_news):
-    """Claude에게 인덱스 번호로 기사 참조 → URL은 코드에서 직접 매핑"""
+def parse_json_safe(raw):
+    """JSON을 안전하게 파싱 (4단계 시도)"""
+    raw = re.sub(r'```json|```', '', raw).strip()
+    start = raw.find('{')
+    end = raw.rfind('}')
+    if start == -1 or end == -1:
+        raise ValueError("JSON 구조를 찾을 수 없음")
+    json_str = raw[start:end + 1]
 
-    # 인덱스 붙인 뉴스 목록 생성
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError:
+        pass
+
+    try:
+        return json.loads(re.sub(r'\n\s*', ' ', json_str))
+    except json.JSONDecodeError:
+        pass
+
+    try:
+        return json.loads(re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', json_str))
+    except json.JSONDecodeError:
+        pass
+
+    try:
+        fixed = re.sub(r'(?<=: ")(.*?)(?="(?:\s*[,}\]]))',
+                       lambda m: m.group(0).replace('"', "'"), json_str)
+        return json.loads(fixed)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"JSON 파싱 최종 실패: {e}")
+
+
+def generate_with_claude(bok, econ_news, politics_news, consumer_news):
     def index_news(news_list, prefix):
         return [{"id": f"{prefix}{i}", "title": n["title"], "desc": n["desc"], "source": n["source"]}
                 for i, n in enumerate(news_list)]
@@ -114,7 +143,6 @@ def generate_with_claude(bok, econ_news, politics_news, consumer_news):
     politics_indexed = index_news(politics_news, "P")
     consumer_indexed = index_news(consumer_news, "C")
 
-    # ID → 실제 URL 매핑 딕셔너리
     url_map = {}
     for i, n in enumerate(econ_news):
         url_map[f"E{i}"] = {"title": n["source"], "url": n["url"]}
@@ -174,50 +202,19 @@ KOSPI지수: {bok['kospi']}
         max_tokens=3000,
         messages=[{"role": "user", "content": prompt}]
     )
-    raw = response.content[0].text
-    raw = re.sub(r'```json|```', '', raw).strip()
-    start = raw.find('{')
-    end = raw.rfind('}')
-    json_str = raw[start:end + 1]
 
-    # 1차 시도
-    try:
-        return json.loads(json_str)
-    except json.JSONDecodeError:
-        pass
+    result = parse_json_safe(response.content[0].text)
 
-    # 2차 시도: 문자열 내 줄바꿈 제거
-    try:
-        json_str2 = re.sub(r'\n\s*', ' ', json_str)
-        return json.loads(json_str2)
-    except json.JSONDecodeError:
-        pass
-
-    # 3차 시도: 제어문자 제거
-    try:
-        json_str3 = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', json_str)
-        return json.loads(json_str3)
-    except json.JSONDecodeError:
-        pass
-
-    # 4차 시도: body와 insight 값을 안전하게 이스케이프
-    try:
-        json_str4 = re.sub(r'(?<=: ")(.*?)(?="(?:\s*[,}\]]))', 
-                           lambda m: m.group(0).replace('"', "'"), json_str)
-        return json.loads(json_str4)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"JSON 파싱 최종 실패: {e}")
-
-    # source_ids → 실제 URL로 변환 (source_ids 또는 sources 둘 다 처리)
+    # source_ids → 실제 URL로 변환 (핵심: parse 후 바로 실행)
     for section in ["econ", "politics", "consumer"]:
         for card in result.get(section, {}).get("cards", []):
             ids = card.pop("source_ids", [])
             existing = card.pop("sources", [])
             mapped = [url_map[sid] for sid in ids if sid in url_map]
-            # 매핑된 게 없으면 기존 sources 사용
             card["sources"] = mapped if mapped else existing
 
     return result
+
 
 def main():
     print(f"[{today}] 브리핑 생성 시작...")
