@@ -1,6 +1,5 @@
 import anthropic, json, os, time, re
 import urllib.request
-import urllib.parse
 from datetime import datetime, timezone, timedelta
 from xml.etree import ElementTree as ET
 
@@ -9,7 +8,6 @@ today = datetime.now(KST).strftime("%Y년 %m월 %d일")
 today_iso = datetime.now(KST).strftime("%Y-%m-%d")
 
 client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; DailyBriefingBot/1.0)"}
 
 RSS_FEEDS = {
@@ -42,7 +40,7 @@ def parse_rss(feed_url, source_name, limit=4):
             link = (entry.findtext("link") or (entry.find("{http://www.w3.org/2005/Atom}link") or entry).get("href", "") or "")
             desc = (entry.findtext("description") or entry.findtext("{http://www.w3.org/2005/Atom}summary") or "")
             title = re.sub(r'<[^>]+>|\[CDATA\[|\]\]', '', title).strip()
-            desc = re.sub(r'<[^>]+>|\[CDATA\[|\]\]', '', desc).strip()[:200]
+            desc = re.sub(r'<[^>]+>|\[CDATA\[|\]\]', '', desc).strip()[:150]
             if title:
                 items.append({"title": title, "url": link.strip(), "desc": desc, "source": source_name})
         print(f"     v {source_name}: {len(items)}건")
@@ -57,32 +55,18 @@ def fetch_section_news(section):
     for feed in RSS_FEEDS[section]:
         news.extend(parse_rss(feed["url"], feed["name"]))
         time.sleep(0.5)
-    return news[:8]
+    return news[:6]
 
 
 def fetch_bok_indicators():
-    indicators = {"rate": "2.50% (2026년 2월 동결)", "news": [], "exchange": "알 수 없음", "kospi": "알 수 없음"}
-    try:
-        bok_rss = "https://www.bok.or.kr/portal/bbs/P0000559/list.do?menuNo=200690&rssYn=Y"
-        req = urllib.request.Request(bok_rss, headers=HEADERS)
-        with urllib.request.urlopen(req, timeout=10) as res:
-            root = ET.fromstring(res.read())
-        for item in root.findall(".//item")[:3]:
-            title = re.sub(r'<[^>]+>', '', item.findtext("title", "")).strip()
-            link = item.findtext("link", "").strip()
-            if title:
-                indicators["news"].append({"title": title, "url": link, "source": "한국은행"})
-        print(f"     v 한국은행: {len(indicators['news'])}건")
-    except Exception as e:
-        print(f"     x 한국은행 RSS 실패: {e}")
-
+    indicators = {"rate": "2.50%", "exchange": "알 수 없음", "kospi": "알 수 없음"}
     try:
         req = urllib.request.Request("https://open.er-api.com/v6/latest/USD", headers=HEADERS)
         with urllib.request.urlopen(req, timeout=10) as res:
             data = json.loads(res.read())
         krw = data.get("rates", {}).get("KRW", 0)
         if krw:
-            indicators["exchange"] = f"1달러 = {krw:,.0f}원"
+            indicators["exchange"] = f"{krw:,.0f}"
     except Exception as e:
         print(f"     x 환율 조회 실패: {e}")
 
@@ -103,115 +87,51 @@ def fetch_bok_indicators():
 
 
 def parse_json_safe(raw):
-    """JSON을 안전하게 파싱 (4단계 시도)"""
     raw = re.sub(r'```json|```', '', raw).strip()
     start = raw.find('{')
     end = raw.rfind('}')
     if start == -1 or end == -1:
-        raise ValueError("JSON 구조를 찾을 수 없음")
+        raise ValueError("JSON 없음")
     json_str = raw[start:end + 1]
-
-    try:
-        return json.loads(json_str)
-    except json.JSONDecodeError:
-        pass
-
-    try:
-        return json.loads(re.sub(r'\n\s*', ' ', json_str))
-    except json.JSONDecodeError:
-        pass
-
-    try:
-        return json.loads(re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', json_str))
-    except json.JSONDecodeError:
-        pass
-
-    try:
-        fixed = re.sub(r'(?<=: ")(.*?)(?="(?:\s*[,}\]]))',
-                       lambda m: m.group(0).replace('"', "'"), json_str)
-        return json.loads(fixed)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"JSON 파싱 최종 실패: {e}")
+    for attempt in [
+        lambda s: json.loads(s),
+        lambda s: json.loads(re.sub(r'\n\s*', ' ', s)),
+        lambda s: json.loads(re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', s)),
+    ]:
+        try:
+            return attempt(json_str)
+        except json.JSONDecodeError:
+            continue
+    raise ValueError("JSON 파싱 실패")
 
 
-def generate_with_claude(bok, econ_news, politics_news, consumer_news):
-    def index_news(news_list, prefix):
-        return [{"id": f"{prefix}{i}", "title": n["title"], "desc": n["desc"], "source": n["source"]}
-                for i, n in enumerate(news_list)]
+def call_claude_section(section_name, news_list, extra_context=""):
+    """섹션별로 따로 Claude 호출 — 짧고 안전"""
+    url_map = {f"N{i}": {"title": n["source"], "url": n["url"]} for i, n in enumerate(news_list)}
+    news_text = "\n".join([f"N{i}: [{n['source']}] {n['title']}" for i, n in enumerate(news_list)])
 
-    econ_indexed = index_news(econ_news, "E")
-    politics_indexed = index_news(politics_news, "P")
-    consumer_indexed = index_news(consumer_news, "C")
+    prompt = f"""{today} 기준 뉴스로 소비자학과 브리핑 카드 3개를 JSON으로 작성하세요.
 
-    url_map = {}
-    for i, n in enumerate(econ_news):
-        url_map[f"E{i}"] = {"title": n["source"], "url": n["url"]}
-    for i, n in enumerate(politics_news):
-        url_map[f"P{i}"] = {"title": n["source"], "url": n["url"]}
-    for i, n in enumerate(consumer_news):
-        url_map[f"C{i}"] = {"title": n["source"], "url": n["url"]}
+{extra_context}
+뉴스 목록:
+{news_text}
 
-    prompt = f"""아래는 {today} 기준 실제 수집된 뉴스입니다.
-서울대 소비자학과 학생을 위한 브리핑 JSON을 작성하세요.
+반드시 아래 형식으로만 응답. 코드블록 없이 JSON만 출력:
+{{"summary":"2문장요약","cards":[{{"tag":"태그","headline":"제목","body":"설명","insight":"소비자학관점","source_ids":["N0"]}}]}}
 
-=== 경제 지표 (반드시 econ 카드에 포함할것) ===
-한국은행 기준금리: {bok['rate']}
-원달러환율: {bok['exchange']}
-KOSPI지수: {bok['kospi']}
-
-=== 경제 뉴스 (ID: E0~E7) ===
-{json.dumps(econ_indexed, ensure_ascii=False)}
-
-=== 정치·사회 뉴스 (ID: P0~P7) ===
-{json.dumps(politics_indexed, ensure_ascii=False)}
-
-=== 소비자·마케팅 뉴스 (ID: C0~C7) ===
-{json.dumps(consumer_indexed, ensure_ascii=False)}
-
-아래 JSON 형식으로만 응답하세요. 코드블록 없이 JSON만:
-{{
-  "econ": {{
-    "summary": "2문장 요약",
-    "cards": [
-      {{"tag": "태그", "headline": "제목", "body": "2-3문장 설명. 수치 포함.", "insight": "소비자학 관점", "source_ids": ["E0", "E1"]}}
-    ]
-  }},
-  "politics": {{
-    "summary": "2문장 요약",
-    "cards": [
-      {{"tag": "태그", "headline": "제목", "body": "2-3문장 설명.", "insight": "소비자 시장 영향", "source_ids": ["P0"]}}
-    ]
-  }},
-  "consumer": {{
-    "summary": "2문장 요약",
-    "cards": [
-      {{"tag": "태그", "headline": "제목", "body": "2-3문장 설명.", "insight": "소비자학 이론 연결", "source_ids": ["C0", "C1"]}}
-    ]
-  }}
-}}
-규칙:
-1. 각 섹션 cards 정확히 3개
-2. source_ids에는 위 ID만 사용
-3. body와 insight 문장에 큰따옴표 절대 사용 금지
-4. 숫자와 단위 사이 공백 없이 붙여쓰기 (예: 5377.30포인트, 1510원, 2.50%)
-5. econ 첫번째 카드 body에 반드시 KOSPI 수치와 환율 수치를 포함할것
-   예시: KOSPI는 5377.30으로 상승했으며 원달러환율은 1510원을 기록했다."""
+규칙: cards 정확히 3개. 문자열안에 큰따옴표 금지. source_ids는 위 N번호만 사용."""
 
     response = client.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=3000,
+        max_tokens=1200,
         messages=[{"role": "user", "content": prompt}]
     )
-
     result = parse_json_safe(response.content[0].text)
 
-    # source_ids → 실제 URL로 변환 (핵심: parse 후 바로 실행)
-    for section in ["econ", "politics", "consumer"]:
-        for card in result.get(section, {}).get("cards", []):
-            ids = card.pop("source_ids", [])
-            existing = card.pop("sources", [])
-            mapped = [url_map[sid] for sid in ids if sid in url_map]
-            card["sources"] = mapped if mapped else existing
+    # source_ids → 실제 URL 변환
+    for card in result.get("cards", []):
+        ids = card.pop("source_ids", [])
+        card["sources"] = [url_map[sid] for sid in ids if sid in url_map]
 
     return result
 
@@ -219,29 +139,36 @@ KOSPI지수: {bok['kospi']}
 def main():
     print(f"[{today}] 브리핑 생성 시작...")
 
-    print("  -> 한국은행 지표 수집 중...")
+    print("  -> 경제 지표 수집 중...")
     bok = fetch_bok_indicators()
+    print(f"     환율: {bok['exchange']}원 | KOSPI: {bok['kospi']}")
 
-    print("  -> 경제 뉴스 수집 중 (매일경제, 한국경제)...")
+    print("  -> 경제 뉴스 수집 중...")
     econ_news = fetch_section_news("econ")
-
-    print("  -> 정치·사회 뉴스 수집 중 (연합뉴스, KBS)...")
+    time.sleep(1)
+    print("  -> 정치·사회 뉴스 수집 중...")
     politics_news = fetch_section_news("politics")
-
-    print("  -> 소비자 뉴스 수집 중 (소비자평가, 마케팅조선, 한국소비자원)...")
+    time.sleep(1)
+    print("  -> 소비자 뉴스 수집 중...")
     consumer_news = fetch_section_news("consumer")
 
-    print("  -> Claude Haiku 분석 중 (1회 호출)...")
-    try:
-        sections = generate_with_claude(bok, econ_news, politics_news, consumer_news)
-        print("  v 분석 완료!")
-    except Exception as e:
-        print(f"  x 분석 실패: {e}")
-        sections = {
-            "econ": {"summary": "오류 발생", "cards": []},
-            "politics": {"summary": "오류 발생", "cards": []},
-            "consumer": {"summary": "오류 발생", "cards": []}
-        }
+    sections = {}
+
+    econ_context = f"경제지표: 기준금리 {bok['rate']}, 원달러환율 {bok['exchange']}원, KOSPI {bok['kospi']}\n첫번째 카드 body에 반드시 KOSPI와 환율 수치를 포함하세요."
+
+    for key, news, ctx in [
+        ("econ", econ_news, econ_context),
+        ("politics", politics_news, ""),
+        ("consumer", consumer_news, ""),
+    ]:
+        print(f"  -> {key} Claude 분석 중...")
+        try:
+            sections[key] = call_claude_section(key, news, ctx)
+            print(f"  v {key} 완료")
+        except Exception as e:
+            print(f"  x {key} 실패: {e}")
+            sections[key] = {"summary": "오류 발생", "cards": []}
+        time.sleep(30)
 
     briefing = {"date": today_iso, "date_kr": today, "sections": sections}
     os.makedirs("docs", exist_ok=True)
