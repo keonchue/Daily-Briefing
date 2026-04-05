@@ -178,14 +178,35 @@ KOSPI지수: {bok['kospi']}
     raw = re.sub(r'```json|```', '', raw).strip()
     start = raw.find('{')
     end = raw.rfind('}')
-    json_str = raw[start:end+1]
-    json_str = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', json_str)
+    json_str = raw[start:end + 1]
 
+    # 1차 시도
     try:
-        result = json.loads(json_str)
+        return json.loads(json_str)
     except json.JSONDecodeError:
-        json_str = re.sub(r'\n\s*', ' ', json_str)
-        result = json.loads(json_str)
+        pass
+
+    # 2차 시도: 문자열 내 줄바꿈 제거
+    try:
+        json_str2 = re.sub(r'\n\s*', ' ', json_str)
+        return json.loads(json_str2)
+    except json.JSONDecodeError:
+        pass
+
+    # 3차 시도: 제어문자 제거
+    try:
+        json_str3 = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', json_str)
+        return json.loads(json_str3)
+    except json.JSONDecodeError:
+        pass
+
+    # 4차 시도: body와 insight 값을 안전하게 이스케이프
+    try:
+        json_str4 = re.sub(r'(?<=: ")(.*?)(?="(?:\s*[,}\]]))', 
+                           lambda m: m.group(0).replace('"', "'"), json_str)
+        return json.loads(json_str4)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"JSON 파싱 최종 실패: {e}")
 
     # source_ids → 실제 URL로 변환
     for section in ["econ", "politics", "consumer"]:
