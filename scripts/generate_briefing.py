@@ -208,14 +208,16 @@ KOSPI지수: {bok['kospi']}
     except json.JSONDecodeError as e:
         raise ValueError(f"JSON 파싱 최종 실패: {e}")
 
-    # source_ids → 실제 URL로 변환
+    # source_ids → 실제 URL로 변환 (source_ids 또는 sources 둘 다 처리)
     for section in ["econ", "politics", "consumer"]:
         for card in result.get(section, {}).get("cards", []):
             ids = card.pop("source_ids", [])
-            card["sources"] = [url_map[sid] for sid in ids if sid in url_map]
+            existing = card.pop("sources", [])
+            mapped = [url_map[sid] for sid in ids if sid in url_map]
+            # 매핑된 게 없으면 기존 sources 사용
+            card["sources"] = mapped if mapped else existing
 
     return result
-
 
 def main():
     print(f"[{today}] 브리핑 생성 시작...")
