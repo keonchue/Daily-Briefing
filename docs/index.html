@@ -171,11 +171,15 @@
           <div class="headline">${c.headline||''}</div>
           <div class="body-text">${c.body||''}</div>
           ${c.insight ? `<div class="insight"><span class="i-label">소비자학 관점</span>${c.insight}</div>` : ''}
-          ${c.sources && c.sources.length ? `
+          ${(c.sources && c.sources.length) ? `
             <div class="sources">
               <span class="src-label">출처</span>
-              ${c.sources.map(s => `<a class="src-link" href="${s.url}" target="_blank" rel="noopener">${s.title}</a>`).join('')}
-            </div>` : ''}
+              ${c.sources.map(s => `<a class="src-link" href="${s.url||'#'}" target="_blank" rel="noopener">${s.title||'출처'}</a>`).join('')}
+            </div>` : (c.source_ids && c.source_ids.length ? `
+            <div class="sources">
+              <span class="src-label">출처</span>
+              ${c.source_ids.map(id => `<span class="src-label">${id}</span>`).join('')}
+            </div>` : '')}
         </div>
       </div>`).join('');
     document.getElementById('panel-' + id).innerHTML = `
