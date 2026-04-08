@@ -327,11 +327,12 @@
   // sw.js는 PWA 캐시용으로만 등록 (FCM은 firebase-messaging-sw.js가 별도 처리)
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 
-  // 알림 활성 여부: 브라우저 권한 granted + 사용자가 끄지 않은 상태
+  // 알림 활성 여부: 브라우저 권한 granted + FCM 토큰 존재 + 사용자가 끄지 않은 상태
   function isNotifOn() {
     return 'Notification' in window
       && Notification.permission === 'granted'
-      && localStorage.getItem('notif_off') !== '1';
+      && !!localStorage.getItem('fcm_token_key')
+      && !localStorage.getItem('notif_off');
   }
 
   // 알림 토글 버튼 상태 업데이트 (FCM 모듈에서도 호출 가능하도록 window에 노출)
@@ -460,6 +461,7 @@ async function registerTokenIfGranted() {
   } catch (err) {
     dbgErr('자동 토큰 등록 실패:', err);
   }
+  if (typeof window.updateNotifBtn === 'function') window.updateNotifBtn();
 }
 registerTokenIfGranted();
 
