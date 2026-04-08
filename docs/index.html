@@ -82,9 +82,10 @@
   @keyframes spin { to{transform:rotate(360deg)} }
   .loading p, .empty p { font-size:13px; line-height:1.7; }
 
-  .notif-bar { background:var(--navy); color:white; padding:9px 20px; font-size:13px; display:none; align-items:center; justify-content:space-between; gap:12px; }
-  .notif-bar.show { display:flex; }
-  .notif-btn { background:var(--gold); color:var(--navy); border:none; border-radius:4px; padding:5px 14px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; font-family:'Noto Sans KR',sans-serif; }
+  .notif-tab-btn { display:flex; align-items:center; gap:5px; padding:13px 10px 13px 6px; font-size:11px; font-weight:400; color:rgba(250,248,245,0.38); border:none; background:transparent; cursor:pointer; border-bottom:2px solid transparent; letter-spacing:0.03em; transition:all 0.2s; font-family:'Noto Sans KR',sans-serif; white-space:nowrap; flex-shrink:0; }
+  .notif-tab-btn:hover { color:rgba(250,248,245,0.7); }
+  .notif-tab-btn.on { color:#66BB6A; border-bottom-color:#66BB6A; }
+  .notif-tab-btn .nb-dot { width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
 
   .ios-hint { background:var(--navy); color:#FAF8F5; border-radius:8px; padding:14px 18px; margin-bottom:18px; font-size:13px; line-height:1.7; display:none; }
   .ios-hint.show { display:block; }
@@ -109,11 +110,6 @@
 </style>
 </head>
 <body>
-
-<div class="notif-bar" id="nbar">
-  <span>매일 오전 7시 브리핑 알림 받기</span>
-  <button class="notif-btn" onclick="askNotif()">알림 켜기</button>
-</div>
 
 <div class="hd">
   <div class="hd-watermark">
@@ -140,6 +136,9 @@
     <button class="tab" id="tab-pol" onclick="switchTab('pol',this)">정치·사회</button>
     <button class="tab" id="tab-con" onclick="switchTab('con',this)">소비자 이슈</button>
     <button class="tab" id="tab-archive" onclick="openArchiveList()">아카이브</button>
+    <button class="notif-tab-btn" id="notif-tab-btn" onclick="handleNotifBtn()">
+      <span class="nb-dot"></span><span id="notif-tab-label">알림</span>
+    </button>
   </div>
 </div>
 
@@ -326,7 +325,36 @@
 
   // sw.js는 PWA 캐시용으로만 등록 (FCM은 firebase-messaging-sw.js가 별도 처리)
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
-  if ('Notification' in window && Notification.permission === 'default') document.getElementById('nbar').classList.add('show');
+
+  // 알림 버튼 상태 업데이트 (FCM 모듈에서도 호출 가능하도록 window에 노출)
+  window.updateNotifBtn = function updateNotifBtn() {
+    const btn   = document.getElementById('notif-tab-btn');
+    const label = document.getElementById('notif-tab-label');
+    if (!btn || !('Notification' in window)) return;
+    const perm = Notification.permission;
+    if (perm === 'granted') {
+      label.textContent = '알림 ON';
+      btn.classList.add('on');
+      btn.title = '알림이 켜져 있습니다';
+    } else if (perm === 'denied') {
+      label.textContent = '알림 차단됨';
+      btn.classList.remove('on');
+      btn.title = '브라우저 설정에서 알림을 허용해 주세요';
+    } else {
+      label.textContent = '알림 켜기';
+      btn.classList.remove('on');
+      btn.title = '클릭해서 매일 오전 7시 알림 받기';
+    }
+  }
+  updateNotifBtn();
+
+  // 알림 버튼 클릭 핸들러 (FCM 모듈이 window.askNotif 설정 후 호출)
+  window.handleNotifBtn = function() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') return; // 이미 ON
+    if (typeof window.askNotif === 'function') window.askNotif();
+  };
+
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
   if (isIOS && !isStandalone) document.getElementById('ios-hint').classList.add('show');
@@ -383,22 +411,7 @@ async function registerTokenIfGranted() {
   if (!_messaging || Notification.permission !== 'granted') return;
   dbg('권한 이미 granted → 자동 토큰 등록 시도');
   try {
-    const swReg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
-    await navigator.serviceWorker.ready;
-    const token = await getToken(_messaging, {
-      vapidKey: FCM_VAPID_KEY,
-      serviceWorkerRegistration: swReg
-    });
-    if (!token) throw new Error('getToken()이 빈 값 반환');
-    dbg('  토큰 발급 성공 ✓ (앞 20자):', token.substring(0, 20) + '...');
-    const key = token.substring(0, 40).replace(/[.#$[\]]/g, '_');
-    const res = await fetch(`${FIREBASE_DB_URL}/fcm_tokens/${key}.json`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, created_at: new Date().toISOString() })
-    });
-    dbg('  DB 저장 HTTP 응답:', res.status, res.statusText);
-    if (!res.ok) throw new Error(`DB 저장 실패 (${res.status})`);
+    await registerToken();
     dbg('  자동 토큰 등록 완료 ✓');
   } catch (err) {
     dbgErr('자동 토큰 등록 실패:', err);
@@ -406,70 +419,65 @@ async function registerTokenIfGranted() {
 }
 registerTokenIfGranted();
 
-window.askNotif = async function() {
-  const nbar = document.getElementById('nbar');
+async function registerToken() {
+  const swReg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+  dbg('2) SW scope:', swReg.scope);
+  await navigator.serviceWorker.ready;
+  dbg('   SW ready ✓');
 
+  dbg('3) FCM 토큰 요청 중 (VAPID 사용)...');
+  const token = await getToken(_messaging, {
+    vapidKey: FCM_VAPID_KEY,
+    serviceWorkerRegistration: swReg
+  });
+  if (!token) throw new Error('getToken()이 빈 값 반환');
+  dbg('   토큰 발급 성공 ✓ (앞 20자):', token.substring(0, 20) + '...');
+
+  dbg('4) DB 저장 중...');
+  const key = token.substring(0, 40).replace(/[.#$[\]]/g, '_');
+  const url = `${FIREBASE_DB_URL}/fcm_tokens/${key}.json`;
+  dbg('   PUT →', url);
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, created_at: new Date().toISOString() })
+  });
+  dbg('   HTTP 응답:', res.status, res.statusText);
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`DB 저장 실패 (${res.status}): ${body}`);
+  }
+  dbg('   DB 저장 성공 ✓');
+}
+
+window.askNotif = async function() {
   if (!_messaging) {
     dbgErr('messaging 객체 없음 — Firebase 초기화 실패 상태');
-    nbar.classList.remove('show');
     return;
   }
 
   dbg('── 알림 등록 시작 ──');
   try {
-    // 1) 권한 요청
     dbg('1) 알림 권한 요청...');
     const perm = await Notification.requestPermission();
     dbg('   결과:', perm);
-    nbar.classList.remove('show');
     if (perm !== 'granted') {
       dbgErr('   알림 권한 거부됨');
+      if (typeof window.updateNotifBtn === 'function') window.updateNotifBtn();
       return;
     }
 
-    // 2) Service Worker 등록
-    dbg('2) firebase-messaging-sw.js 등록 중...');
-    const swReg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
-    dbg('   SW scope:', swReg.scope);
-    await navigator.serviceWorker.ready;
-    dbg('   SW ready ✓');
+    await registerToken();
 
-    // 3) FCM 토큰 발급
-    dbg('3) FCM 토큰 요청 중 (VAPID 사용)...');
-    const token = await getToken(_messaging, {
-      vapidKey: FCM_VAPID_KEY,
-      serviceWorkerRegistration: swReg
-    });
-    if (!token) throw new Error('getToken()이 빈 값 반환');
-    dbg('   토큰 발급 성공 ✓ (앞 20자):', token.substring(0, 20) + '...');
-
-    // 4) Realtime Database에 저장
-    dbg('4) DB 저장 중...');
-    const key = token.substring(0, 40).replace(/[.#$[\]]/g, '_');
-    const url = `${FIREBASE_DB_URL}/fcm_tokens/${key}.json`;
-    dbg('   PUT →', url);
-    const res = await fetch(url, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, created_at: new Date().toISOString() })
-    });
-    dbg('   HTTP 응답:', res.status, res.statusText);
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`DB 저장 실패 (${res.status}): ${body}`);
-    }
-    dbg('   DB 저장 성공 ✓');
-
-    // 5) 완료 알림
     new Notification('알림 설정 완료!', {
       body: '매일 오전 7시에 브리핑을 보내드려요.',
       icon: 'snu_ui_download.png',
       tag: 'briefing-confirm'
     });
     dbg('── 등록 완료 ──');
+    if (typeof window.updateNotifBtn === 'function') window.updateNotifBtn();
   } catch (err) {
     dbgErr('등록 실패:', err);
-    nbar.classList.remove('show');
   }
 };
 </script>
