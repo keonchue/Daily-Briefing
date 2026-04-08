@@ -327,33 +327,40 @@
   // sw.js는 PWA 캐시용으로만 등록 (FCM은 firebase-messaging-sw.js가 별도 처리)
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 
+  // 알림 활성 여부: 브라우저 권한 granted + 사용자가 끄지 않은 상태
+  function isNotifOn() {
+    return 'Notification' in window
+      && Notification.permission === 'granted'
+      && localStorage.getItem('notif_off') !== '1';
+  }
+
   // 알림 토글 버튼 상태 업데이트 (FCM 모듈에서도 호출 가능하도록 window에 노출)
   window.updateNotifBtn = function() {
     const btn   = document.getElementById('notif-toggle');
     const label = document.getElementById('notif-toggle-label');
     if (!btn || !('Notification' in window)) return;
-    const perm = Notification.permission;
-    if (perm === 'granted') {
+    if (isNotifOn()) {
       label.textContent = '알림 ON';
       btn.classList.add('on');
-      btn.title = '클릭하면 알림이 꺼집니다 (브라우저 설정에서 변경)';
-    } else if (perm === 'denied') {
-      label.textContent = '알림 OFF';
-      btn.classList.remove('on');
-      btn.title = '브라우저 설정에서 알림을 허용해 주세요';
+      btn.title = '클릭하면 알림이 꺼집니다';
     } else {
       label.textContent = '알림 OFF';
       btn.classList.remove('on');
-      btn.title = '클릭해서 매일 오전 7시 알림 받기';
+      btn.title = Notification.permission === 'denied'
+        ? '브라우저 설정에서 알림을 허용해 주세요'
+        : '클릭해서 매일 오전 7시 알림 받기';
     }
   };
   window.updateNotifBtn();
 
-  // 알림 버튼 클릭 핸들러 (FCM 모듈이 window.askNotif 설정 후 호출)
+  // 알림 버튼 클릭 핸들러 — ON이면 끄기, OFF면 켜기
   window.handleNotifBtn = function() {
     if (!('Notification' in window)) return;
-    if (Notification.permission === 'granted') return; // 이미 ON
-    if (typeof window.askNotif === 'function') window.askNotif();
+    if (isNotifOn()) {
+      if (typeof window.turnOffNotif === 'function') window.turnOffNotif();
+    } else {
+      if (typeof window.askNotif === 'function') window.askNotif();
+    }
   };
 
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -365,8 +372,8 @@
 
 <!-- Firebase Cloud Messaging -->
 <script type="module">
-import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging.js';
+import { initializeApp }        from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { getMessaging, getToken, deleteToken } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging.js';
 
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyAijGdIJXGidRLUZTMYb2A-4LFvunFMUDo",
@@ -407,78 +414,108 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// ── 이미 권한이 granted면 자동으로 토큰 등록 ────────────────────────────────
+// ── 토큰 등록 ────────────────────────────────────────────────────────────────
+async function registerToken() {
+  const swReg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+  dbg('SW scope:', swReg.scope);
+  await navigator.serviceWorker.ready;
+  dbg('SW ready ✓');
+
+  dbg('FCM 토큰 요청 중 (VAPID 사용)...');
+  const token = await getToken(_messaging, {
+    vapidKey: FCM_VAPID_KEY,
+    serviceWorkerRegistration: swReg
+  });
+  if (!token) throw new Error('getToken()이 빈 값 반환');
+  dbg('토큰 발급 성공 ✓ (앞 20자):', token.substring(0, 20) + '...');
+
+  const key = token.substring(0, 40).replace(/[.#$[\]]/g, '_');
+  localStorage.setItem('fcm_token_key', key); // 나중에 삭제할 때 사용
+
+  dbg('DB 저장 중... PUT →', `fcm_tokens/${key}`);
+  const res = await fetch(`${FIREBASE_DB_URL}/fcm_tokens/${key}.json`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, created_at: new Date().toISOString() })
+  });
+  dbg('HTTP 응답:', res.status, res.statusText);
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`DB 저장 실패 (${res.status}): ${body}`);
+  }
+  dbg('DB 저장 성공 ✓');
+}
+
+// ── 이미 권한 granted + 사용자가 끄지 않은 경우 자동 토큰 등록 ──────────────
 async function registerTokenIfGranted() {
   if (!_messaging || Notification.permission !== 'granted') return;
+  if (localStorage.getItem('notif_off') === '1') {
+    dbg('사용자가 알림을 끈 상태 → 자동 등록 건너뜀');
+    return;
+  }
   dbg('권한 이미 granted → 자동 토큰 등록 시도');
   try {
     await registerToken();
-    dbg('  자동 토큰 등록 완료 ✓');
+    dbg('자동 토큰 등록 완료 ✓');
   } catch (err) {
     dbgErr('자동 토큰 등록 실패:', err);
   }
 }
 registerTokenIfGranted();
 
-async function registerToken() {
-  const swReg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
-  dbg('2) SW scope:', swReg.scope);
-  await navigator.serviceWorker.ready;
-  dbg('   SW ready ✓');
-
-  dbg('3) FCM 토큰 요청 중 (VAPID 사용)...');
-  const token = await getToken(_messaging, {
-    vapidKey: FCM_VAPID_KEY,
-    serviceWorkerRegistration: swReg
-  });
-  if (!token) throw new Error('getToken()이 빈 값 반환');
-  dbg('   토큰 발급 성공 ✓ (앞 20자):', token.substring(0, 20) + '...');
-
-  dbg('4) DB 저장 중...');
-  const key = token.substring(0, 40).replace(/[.#$[\]]/g, '_');
-  const url = `${FIREBASE_DB_URL}/fcm_tokens/${key}.json`;
-  dbg('   PUT →', url);
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, created_at: new Date().toISOString() })
-  });
-  dbg('   HTTP 응답:', res.status, res.statusText);
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`DB 저장 실패 (${res.status}): ${body}`);
-  }
-  dbg('   DB 저장 성공 ✓');
-}
-
+// ── 알림 켜기 ────────────────────────────────────────────────────────────────
 window.askNotif = async function() {
-  if (!_messaging) {
-    dbgErr('messaging 객체 없음 — Firebase 초기화 실패 상태');
-    return;
-  }
-
-  dbg('── 알림 등록 시작 ──');
+  if (!_messaging) { dbgErr('messaging 객체 없음'); return; }
+  dbg('── 알림 켜기 시작 ──');
   try {
-    dbg('1) 알림 권한 요청...');
+    dbg('알림 권한 요청...');
     const perm = await Notification.requestPermission();
-    dbg('   결과:', perm);
+    dbg('결과:', perm);
     if (perm !== 'granted') {
-      dbgErr('   알림 권한 거부됨');
+      dbgErr('알림 권한 거부됨');
       if (typeof window.updateNotifBtn === 'function') window.updateNotifBtn();
       return;
     }
 
     await registerToken();
+    localStorage.removeItem('notif_off');
 
     new Notification('알림 설정 완료!', {
       body: '매일 오전 7시에 브리핑을 보내드려요.',
       icon: 'snu_ui_download.png',
       tag: 'briefing-confirm'
     });
-    dbg('── 등록 완료 ──');
+    dbg('── 알림 켜기 완료 ──');
     if (typeof window.updateNotifBtn === 'function') window.updateNotifBtn();
   } catch (err) {
-    dbgErr('등록 실패:', err);
+    dbgErr('알림 켜기 실패:', err);
+  }
+};
+
+// ── 알림 끄기 ────────────────────────────────────────────────────────────────
+window.turnOffNotif = async function() {
+  dbg('── 알림 끄기 시작 ──');
+  try {
+    // 1) FCM SDK 토큰 삭제 (브라우저 레벨)
+    if (_messaging) {
+      await deleteToken(_messaging);
+      dbg('FCM 토큰 삭제 완료 ✓');
+    }
+    // 2) Firebase DB에서 토큰 삭제
+    const key = localStorage.getItem('fcm_token_key');
+    if (key) {
+      const res = await fetch(`${FIREBASE_DB_URL}/fcm_tokens/${key}.json`, { method: 'DELETE' });
+      dbg('DB 토큰 삭제 HTTP 응답:', res.status, res.statusText);
+      localStorage.removeItem('fcm_token_key');
+    } else {
+      dbg('저장된 토큰 키 없음 — DB 삭제 건너뜀');
+    }
+    // 3) 사용자 OFF 상태 저장
+    localStorage.setItem('notif_off', '1');
+    dbg('── 알림 끄기 완료 ──');
+    if (typeof window.updateNotifBtn === 'function') window.updateNotifBtn();
+  } catch (err) {
+    dbgErr('알림 끄기 실패:', err);
   }
 };
 </script>
