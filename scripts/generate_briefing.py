@@ -174,6 +174,26 @@ def main():
     os.makedirs("docs", exist_ok=True)
     with open("docs/briefing.json", "w", encoding="utf-8") as f:
         json.dump(briefing, f, ensure_ascii=False, indent=2)
+
+    # 아카이브 저장
+    os.makedirs("docs/archive", exist_ok=True)
+    with open(f"docs/archive/{today_iso}.json", "w", encoding="utf-8") as f:
+        json.dump(briefing, f, ensure_ascii=False, indent=2)
+
+    # 아카이브 인덱스 업데이트
+    index_path = "docs/archive/index.json"
+    if os.path.exists(index_path):
+        with open(index_path, encoding="utf-8") as f:
+            idx = json.load(f)
+        dates = idx.get("dates", [])
+    else:
+        dates = []
+    if today_iso not in dates:
+        dates.append(today_iso)
+        dates.sort()
+    with open(index_path, "w", encoding="utf-8") as f:
+        json.dump({"dates": dates}, f, ensure_ascii=False)
+
     print("완료!")
 
 

@@ -92,6 +92,20 @@
   .ios-hint button { background:var(--gold); color:var(--navy); border:none; border-radius:4px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; margin-top:8px; }
 
   .update-bar { text-align:center; padding:8px; font-family:'DM Mono',monospace; font-size:10px; color:#bbb; border-top:1px solid #ece8e0; margin-top:32px; }
+
+  /* 아카이브 */
+  .arch-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
+  .arch-title { font-family:'Noto Serif KR',serif; font-size:18px; font-weight:600; color:#111827; }
+  .arch-back { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--navy); border:1px solid var(--border); border-radius:6px; padding:7px 14px; background:white; cursor:pointer; text-decoration:none; font-family:'Noto Sans KR',sans-serif; transition:background 0.15s; }
+  .arch-back:hover { background:#f0f0f8; }
+  .arch-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+  .arch-item { background:white; border:1px solid var(--border); border-radius:10px; padding:16px 18px; cursor:pointer; transition:box-shadow 0.15s,border-color 0.15s; display:flex; flex-direction:column; gap:5px; }
+  .arch-item:hover { box-shadow:0 4px 16px rgba(0,14,92,0.1); border-color:rgba(0,14,92,0.2); }
+  .arch-item-date { font-family:'Noto Serif KR',serif; font-size:15px; font-weight:600; color:#111827; }
+  .arch-item-sub { font-family:'DM Mono',monospace; font-size:10px; color:#aaa; letter-spacing:0.08em; }
+  .arch-detail-tabs { display:flex; border-bottom:1px solid var(--border); margin-bottom:20px; }
+  .arch-detail-tab { flex:1; padding:11px 8px; text-align:center; font-size:12px; color:#aaa; border:none; background:transparent; cursor:pointer; border-bottom:2px solid transparent; transition:all 0.2s; font-family:'Noto Sans KR',sans-serif; }
+  .arch-detail-tab.on { color:var(--navy); border-bottom-color:var(--gold); font-weight:500; }
 </style>
 </head>
 <body>
@@ -122,9 +136,10 @@
   </div>
   <div class="sep"></div>
   <div class="tabs">
-    <button class="tab on" onclick="switchTab('econ',this)">경제 상황</button>
-    <button class="tab" onclick="switchTab('pol',this)">정치·사회</button>
-    <button class="tab" onclick="switchTab('con',this)">소비자 이슈</button>
+    <button class="tab on" id="tab-econ" onclick="switchTab('econ',this)">경제 상황</button>
+    <button class="tab" id="tab-pol" onclick="switchTab('pol',this)">정치·사회</button>
+    <button class="tab" id="tab-con" onclick="switchTab('con',this)">소비자 이슈</button>
+    <button class="tab" id="tab-archive" onclick="openArchiveList()">아카이브</button>
   </div>
 </div>
 
@@ -142,6 +157,7 @@
   <div class="panel on" id="panel-econ"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
   <div class="panel" id="panel-pol"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
   <div class="panel" id="panel-con"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
+  <div class="panel" id="panel-archive"></div>
   <div class="update-bar" id="ubar"></div>
 </div>
 
@@ -155,6 +171,99 @@
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
     btn.classList.add('on');
     document.getElementById('panel-' + id).classList.add('on');
+  }
+
+  // 아카이브 목록 열기
+  async function openArchiveList() {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+    document.getElementById('tab-archive').classList.add('on');
+    const panel = document.getElementById('panel-archive');
+    panel.classList.add('on');
+    panel.innerHTML = '<div class="loading"><div class="spinner"></div><p>아카이브 불러오는 중...</p></div>';
+    try {
+      const res = await fetch('archive/index.json?t=' + Date.now());
+      if (!res.ok) throw new Error();
+      const { dates } = await res.json();
+      const sorted = [...dates].sort((a, b) => b.localeCompare(a));
+      const items = sorted.map(d => {
+        const [y, m, day] = d.split('-');
+        const weekday = new Date(d).toLocaleDateString('ko-KR', { weekday: 'short' });
+        return `<div class="arch-item" onclick="openArchiveDate('${d}')">
+          <div class="arch-item-date">${m}월 ${parseInt(day)}일 (${weekday})</div>
+          <div class="arch-item-sub">${y} · 브리핑 보기 →</div>
+        </div>`;
+      }).join('');
+      panel.innerHTML = `
+        <div class="arch-header">
+          <div class="arch-title">브리핑 아카이브</div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;color:#aaa;">총 ${sorted.length}개</div>
+        </div>
+        <div class="arch-list">${items}</div>`;
+    } catch {
+      panel.innerHTML = '<div class="empty"><p>아카이브를 불러오지 못했어요.</p></div>';
+    }
+  }
+
+  // 특정 날짜 아카이브 열기
+  async function openArchiveDate(date) {
+    const panel = document.getElementById('panel-archive');
+    panel.innerHTML = '<div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div>';
+    try {
+      const res = await fetch(`archive/${date}.json?t=` + Date.now());
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const s = data.sections || {};
+      const [y, m, d] = date.split('-');
+      const weekday = new Date(date).toLocaleDateString('ko-KR', { weekday: 'long' });
+      let activeSection = 'econ';
+
+      function renderArchiveSection(secId) {
+        const sectionMap = { econ: s.econ, pol: s.politics, con: s.consumer };
+        const secData = sectionMap[secId];
+        const tc = secId === 'econ' ? '' : secId;
+        if (!secData || !secData.cards || !secData.cards.length) {
+          return '<div class="empty"><p>데이터가 없습니다.</p></div>';
+        }
+        const cards = secData.cards.map(c => `
+          <div class="card ${tc}">
+            <div class="card-bar"></div>
+            <div class="card-inner">
+              <span class="tag">${c.tag||''}</span>
+              <div class="headline">${c.headline||''}</div>
+              <div class="body-text">${c.body||''}</div>
+              ${c.insight ? `<div class="insight"><span class="i-label">소비자학 관점</span>${c.insight}</div>` : ''}
+              ${(c.sources && c.sources.length) ? `<div class="sources"><span class="src-label">출처</span>${c.sources.map(src => `<a class="src-link" href="${src.url||'#'}" target="_blank" rel="noopener">${src.title||'출처'}</a>`).join('')}</div>` : ''}
+            </div>
+          </div>`).join('');
+        return `<div class="summary"><div class="sum-label">요약</div><div class="sum-text">${secData.summary||''}</div></div><div class="grid">${cards}</div>`;
+      }
+
+      function renderArchivePanel() {
+        const tabs = [['econ','경제 상황'],['pol','정치·사회'],['con','소비자 이슈']].map(([id,label]) =>
+          `<button class="arch-detail-tab ${id===activeSection?'on':''}" onclick="archSwitchTab('${id}',this)">${label}</button>`
+        ).join('');
+        panel.innerHTML = `
+          <div class="arch-header">
+            <div class="arch-title">${m}월 ${parseInt(d)}일 (${weekday}) 브리핑</div>
+            <button class="arch-back" onclick="openArchiveList()">← 목록으로</button>
+          </div>
+          <div class="arch-detail-tabs">${tabs}</div>
+          <div id="arch-content">${renderArchiveSection(activeSection)}</div>`;
+        window._archRenderSection = renderArchiveSection;
+      }
+
+      window.archSwitchTab = function(secId, btn) {
+        activeSection = secId;
+        document.querySelectorAll('.arch-detail-tab').forEach(t => t.classList.remove('on'));
+        btn.classList.add('on');
+        document.getElementById('arch-content').innerHTML = window._archRenderSection(secId);
+      };
+
+      renderArchivePanel();
+    } catch {
+      panel.innerHTML = '<div class="empty"><p>브리핑을 불러오지 못했어요.</p></div>';
+    }
   }
 
   function renderSection(id, data) {
