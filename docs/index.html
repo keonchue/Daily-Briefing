@@ -82,10 +82,11 @@
   @keyframes spin { to{transform:rotate(360deg)} }
   .loading p, .empty p { font-size:13px; line-height:1.7; }
 
-  .notif-tab-btn { display:flex; align-items:center; gap:5px; padding:13px 10px 13px 6px; font-size:11px; font-weight:400; color:rgba(250,248,245,0.38); border:none; background:transparent; cursor:pointer; border-bottom:2px solid transparent; letter-spacing:0.03em; transition:all 0.2s; font-family:'Noto Sans KR',sans-serif; white-space:nowrap; flex-shrink:0; }
-  .notif-tab-btn:hover { color:rgba(250,248,245,0.7); }
-  .notif-tab-btn.on { color:#66BB6A; border-bottom-color:#66BB6A; }
-  .notif-tab-btn .nb-dot { width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .notif-toggle { display:inline-flex; align-items:center; gap:5px; margin-top:7px; padding:4px 10px 4px 7px; border-radius:20px; border:1px solid rgba(250,248,245,0.15); background:rgba(255,255,255,0.06); cursor:pointer; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.06em; color:rgba(250,248,245,0.45); transition:all 0.2s; }
+  .notif-toggle:hover { border-color:rgba(250,248,245,0.3); color:rgba(250,248,245,0.7); }
+  .notif-toggle.on { border-color:rgba(102,187,106,0.5); color:#66BB6A; background:rgba(102,187,106,0.1); }
+  .notif-toggle .nb-dot { width:6px; height:6px; border-radius:50%; background:#66BB6A; flex-shrink:0; display:none; }
+  .notif-toggle.on .nb-dot { display:inline-block; }
 
   .ios-hint { background:var(--navy); color:#FAF8F5; border-radius:8px; padding:14px 18px; margin-bottom:18px; font-size:13px; line-height:1.7; display:none; }
   .ios-hint.show { display:block; }
@@ -127,6 +128,9 @@
       <div class="meta">
         <div class="meta-date"><span class="live"></span><span id="hdate"></span></div>
         <div class="meta-time" id="htime"></div>
+        <button class="notif-toggle" id="notif-toggle" onclick="handleNotifBtn()">
+          <span class="nb-dot"></span><span id="notif-toggle-label">알림 OFF</span>
+        </button>
       </div>
     </div>
   </div>
@@ -136,9 +140,6 @@
     <button class="tab" id="tab-pol" onclick="switchTab('pol',this)">정치·사회</button>
     <button class="tab" id="tab-con" onclick="switchTab('con',this)">소비자 이슈</button>
     <button class="tab" id="tab-archive" onclick="openArchiveList()">아카이브</button>
-    <button class="notif-tab-btn" id="notif-tab-btn" onclick="handleNotifBtn()">
-      <span class="nb-dot"></span><span id="notif-tab-label">알림</span>
-    </button>
   </div>
 </div>
 
@@ -326,27 +327,27 @@
   // sw.js는 PWA 캐시용으로만 등록 (FCM은 firebase-messaging-sw.js가 별도 처리)
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 
-  // 알림 버튼 상태 업데이트 (FCM 모듈에서도 호출 가능하도록 window에 노출)
-  window.updateNotifBtn = function updateNotifBtn() {
-    const btn   = document.getElementById('notif-tab-btn');
-    const label = document.getElementById('notif-tab-label');
+  // 알림 토글 버튼 상태 업데이트 (FCM 모듈에서도 호출 가능하도록 window에 노출)
+  window.updateNotifBtn = function() {
+    const btn   = document.getElementById('notif-toggle');
+    const label = document.getElementById('notif-toggle-label');
     if (!btn || !('Notification' in window)) return;
     const perm = Notification.permission;
     if (perm === 'granted') {
       label.textContent = '알림 ON';
       btn.classList.add('on');
-      btn.title = '알림이 켜져 있습니다';
+      btn.title = '클릭하면 알림이 꺼집니다 (브라우저 설정에서 변경)';
     } else if (perm === 'denied') {
-      label.textContent = '알림 차단됨';
+      label.textContent = '알림 OFF';
       btn.classList.remove('on');
       btn.title = '브라우저 설정에서 알림을 허용해 주세요';
     } else {
-      label.textContent = '알림 켜기';
+      label.textContent = '알림 OFF';
       btn.classList.remove('on');
       btn.title = '클릭해서 매일 오전 7시 알림 받기';
     }
-  }
-  updateNotifBtn();
+  };
+  window.updateNotifBtn();
 
   // 알림 버튼 클릭 핸들러 (FCM 모듈이 window.askNotif 설정 후 호출)
   window.handleNotifBtn = function() {
