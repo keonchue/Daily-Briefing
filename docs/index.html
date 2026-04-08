@@ -335,7 +335,6 @@
 </script>
 
 <!-- Firebase Cloud Messaging -->
-<!-- ★ 아래 설정값을 Firebase 콘솔에서 복사한 실제 값으로 교체하세요 ★ -->
 <script type="module">
 import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging.js';
@@ -351,53 +350,97 @@ const FIREBASE_CONFIG = {
 const FCM_VAPID_KEY = "BB1qlZhAHRsG-Zefd9K-DcLLWL7ysZ66iMtXFB75STlN3IBGvKs4T4F9J-Pn8Od23ITvRdS0HPayWcAcmqRN9ck";
 const FIREBASE_DB_URL = "https://consumer-briefing-default-rtdb.asia-southeast1.firebasedatabase.app";
 
+// ── 디버그 헬퍼 ──────────────────────────────────────────────────────────────
+const dbg = (...a) => console.log('[FCM]', ...a);
+const dbgErr = (...a) => console.error('[FCM]', ...a);
+
+// ── Firebase 초기화 ──────────────────────────────────────────────────────────
 let _messaging = null;
 try {
+  dbg('Firebase 초기화 시작...');
   const app = initializeApp(FIREBASE_CONFIG);
   _messaging = getMessaging(app);
+  dbg('Firebase 초기화 성공 ✓');
 } catch (e) {
-  console.warn('Firebase 초기화 실패 (설정값을 확인하세요):', e.message);
+  dbgErr('Firebase 초기화 실패:', e);
+}
+
+// ── 환경 진단 (페이지 로드 시 자동 실행) ────────────────────────────────────
+dbg('환경 진단:');
+dbg('  HTTPS 여부:', location.protocol === 'https:' ? '✓' : '✗ (HTTPS 필요)');
+dbg('  ServiceWorker 지원:', 'serviceWorker' in navigator ? '✓' : '✗');
+dbg('  Notification 지원:', 'Notification' in window ? '✓' : '✗');
+dbg('  현재 알림 권한:', Notification.permission);
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    dbg('  등록된 SW 목록:', regs.map(r => r.scope));
+  });
 }
 
 window.askNotif = async function() {
   const nbar = document.getElementById('nbar');
+
   if (!_messaging) {
+    dbgErr('messaging 객체 없음 — Firebase 초기화 실패 상태');
     nbar.classList.remove('show');
-    alert('Firebase 설정이 필요합니다. firebase-messaging-sw.js와 index.html의 REPLACE_* 값을 교체하세요.');
     return;
   }
+
+  dbg('── 알림 등록 시작 ──');
   try {
+    // 1) 권한 요청
+    dbg('1) 알림 권한 요청...');
     const perm = await Notification.requestPermission();
+    dbg('   결과:', perm);
     nbar.classList.remove('show');
-    if (perm !== 'granted') return;
+    if (perm !== 'granted') {
+      dbgErr('   알림 권한 거부됨');
+      return;
+    }
 
-    // Firebase Messaging 전용 서비스 워커 등록
+    // 2) Service Worker 등록
+    dbg('2) firebase-messaging-sw.js 등록 중...');
     const swReg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+    dbg('   SW scope:', swReg.scope);
     await navigator.serviceWorker.ready;
+    dbg('   SW ready ✓');
 
+    // 3) FCM 토큰 발급
+    dbg('3) FCM 토큰 요청 중 (VAPID 사용)...');
     const token = await getToken(_messaging, {
       vapidKey: FCM_VAPID_KEY,
       serviceWorkerRegistration: swReg
     });
+    if (!token) throw new Error('getToken()이 빈 값 반환');
+    dbg('   토큰 발급 성공 ✓ (앞 20자):', token.substring(0, 20) + '...');
 
-    if (!token) throw new Error('토큰 발급 실패');
-
-    // 토큰을 Firebase Realtime Database에 저장 (REST API 사용)
+    // 4) Realtime Database에 저장
+    dbg('4) DB 저장 중...');
     const key = token.substring(0, 40).replace(/[.#$[\]]/g, '_');
-    const res = await fetch(`${FIREBASE_DB_URL}/fcm_tokens/${key}.json`, {
+    const url = `${FIREBASE_DB_URL}/fcm_tokens/${key}.json`;
+    dbg('   PUT →', url);
+    const res = await fetch(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token, created_at: new Date().toISOString() })
     });
-    if (!res.ok) throw new Error(`DB 저장 실패: ${res.status}`);
+    dbg('   HTTP 응답:', res.status, res.statusText);
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`DB 저장 실패 (${res.status}): ${body}`);
+    }
+    dbg('   DB 저장 성공 ✓');
 
+    // 5) 완료 알림
     new Notification('알림 설정 완료!', {
       body: '매일 오전 7시에 브리핑을 보내드려요.',
       icon: 'snu_ui_download.png',
       tag: 'briefing-confirm'
     });
+    dbg('── 등록 완료 ──');
   } catch (err) {
-    console.error('FCM 설정 오류:', err);
+    dbgErr('등록 실패:', err);
     nbar.classList.remove('show');
   }
 };

@@ -1,5 +1,4 @@
 // Firebase Messaging 백그라운드 핸들러
-// 주의: 아래 설정값을 Firebase 콘솔에서 복사한 값으로 교체하세요.
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
 
