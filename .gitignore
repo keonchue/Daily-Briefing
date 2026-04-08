@@ -1,0 +1,7 @@
+# Firebase 서비스 계정 키 (절대 커밋 금지)
+consumer-briefing-*.json
+
+# Python
+__pycache__/
+*.pyc
+.env

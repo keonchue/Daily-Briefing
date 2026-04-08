@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install anthropic
+      - run: pip install anthropic firebase-admin
       - name: 브리핑 생성
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -22,6 +22,12 @@ jobs:
         run: |
           git config --global user.name "Briefing Bot"
           git config --global user.email "bot@briefing"
-          git add docs/briefing.json
+          git add docs/briefing.json docs/archive/
           git diff --staged --quiet || git commit -m "브리핑 업데이트: $(date +'%Y-%m-%d')"
           git push
+      - name: FCM 푸시 알림 발송
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DB_URL: ${{ secrets.FIREBASE_DB_URL }}
+          PAGES_URL: ${{ secrets.PAGES_URL }}
+        run: python scripts/send_notifications.py

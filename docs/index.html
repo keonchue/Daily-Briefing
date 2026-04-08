@@ -324,13 +324,7 @@
     }
   }
 
-  function askNotif() {
-    Notification.requestPermission().then(p => {
-      document.getElementById('nbar').classList.remove('show');
-      if (p === 'granted') new Notification('알림 설정 완료!', { body: '매일 오전 7시에 브리핑을 보내드려요.' });
-    });
-  }
-
+  // sw.js는 PWA 캐시용으로만 등록 (FCM은 firebase-messaging-sw.js가 별도 처리)
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
   if ('Notification' in window && Notification.permission === 'default') document.getElementById('nbar').classList.add('show');
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -338,6 +332,75 @@
   if (isIOS && !isStandalone) document.getElementById('ios-hint').classList.add('show');
 
   loadBriefing();
+</script>
+
+<!-- Firebase Cloud Messaging -->
+<!-- ★ 아래 설정값을 Firebase 콘솔에서 복사한 실제 값으로 교체하세요 ★ -->
+<script type="module">
+import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging.js';
+
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyAijGdIJXGidRLUZTMYb2A-4LFvunFMUDo",
+  authDomain:        "consumer-briefing.firebaseapp.com",
+  projectId:         "consumer-briefing",
+  storageBucket:     "consumer-briefing.appspot.com",
+  messagingSenderId: "579742111110",
+  appId:             "1:579742111110:web:26a7408aac887c4b0b8807"
+};
+const FCM_VAPID_KEY = "BB1qlZhAHRsG-Zefd9K-DcLLWL7ysZ66iMtXFB75STlN3IBGvKs4T4F9J-Pn8Od23ITvRdS0HPayWcAcmqRN9ck";
+const FIREBASE_DB_URL = "https://consumer-briefing-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+let _messaging = null;
+try {
+  const app = initializeApp(FIREBASE_CONFIG);
+  _messaging = getMessaging(app);
+} catch (e) {
+  console.warn('Firebase 초기화 실패 (설정값을 확인하세요):', e.message);
+}
+
+window.askNotif = async function() {
+  const nbar = document.getElementById('nbar');
+  if (!_messaging) {
+    nbar.classList.remove('show');
+    alert('Firebase 설정이 필요합니다. firebase-messaging-sw.js와 index.html의 REPLACE_* 값을 교체하세요.');
+    return;
+  }
+  try {
+    const perm = await Notification.requestPermission();
+    nbar.classList.remove('show');
+    if (perm !== 'granted') return;
+
+    // Firebase Messaging 전용 서비스 워커 등록
+    const swReg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+    await navigator.serviceWorker.ready;
+
+    const token = await getToken(_messaging, {
+      vapidKey: FCM_VAPID_KEY,
+      serviceWorkerRegistration: swReg
+    });
+
+    if (!token) throw new Error('토큰 발급 실패');
+
+    // 토큰을 Firebase Realtime Database에 저장 (REST API 사용)
+    const key = token.substring(0, 40).replace(/[.#$[\]]/g, '_');
+    const res = await fetch(`${FIREBASE_DB_URL}/fcm_tokens/${key}.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, created_at: new Date().toISOString() })
+    });
+    if (!res.ok) throw new Error(`DB 저장 실패: ${res.status}`);
+
+    new Notification('알림 설정 완료!', {
+      body: '매일 오전 7시에 브리핑을 보내드려요.',
+      icon: 'snu_ui_download.png',
+      tag: 'briefing-confirm'
+    });
+  } catch (err) {
+    console.error('FCM 설정 오류:', err);
+    nbar.classList.remove('show');
+  }
+};
 </script>
 </body>
 </html>
