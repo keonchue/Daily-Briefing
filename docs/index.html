@@ -114,8 +114,28 @@
   .card.con .bm-btn { color:rgba(123,74,0,0.22); }
   .card.con .bm-btn:hover, .card.con .bm-btn.on { color:#7B4A00; }
 
-  .bm-section-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:#aaa; margin:20px 0 10px; }
-  .bm-section-label:first-child { margin-top:0; }
+  .meta-btns { display:flex; align-items:center; gap:6px; justify-content:flex-end; margin-top:7px; }
+  .bm-hdr-btn { display:inline-flex; align-items:center; padding:4px 9px; border-radius:20px; border:1px solid rgba(250,248,245,0.15); background:rgba(255,255,255,0.06); cursor:pointer; font-size:13px; color:rgba(250,248,245,0.5); transition:all 0.2s; line-height:1; }
+  .bm-hdr-btn:hover { border-color:rgba(250,248,245,0.3); color:rgba(250,248,245,0.85); }
+  .bm-hdr-btn.has-bm { border-color:rgba(201,176,114,0.45); color:var(--gold); background:rgba(201,176,114,0.08); }
+
+  .bm-dropdown { position:fixed; width:320px; max-height:72vh; background:white; border-radius:14px; box-shadow:0 12px 40px rgba(0,0,0,0.18),0 2px 8px rgba(0,0,0,0.08); border:1px solid var(--border); z-index:2000; display:none; flex-direction:column; overflow:hidden; }
+  .bm-dropdown.open { display:flex; animation:fadein 0.15s ease; }
+  .bm-dd-head { padding:13px 16px 11px; border-bottom:1px solid #F0EDE8; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+  .bm-dd-title { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:var(--navy); }
+  .bm-dd-close { background:none; border:none; cursor:pointer; color:#bbb; font-size:18px; line-height:1; padding:0 2px; transition:color 0.15s; }
+  .bm-dd-close:hover { color:#888; }
+  .bm-dd-body { overflow-y:auto; flex:1; padding:6px; }
+  .bm-dd-body::-webkit-scrollbar { width:4px; }
+  .bm-dd-body::-webkit-scrollbar-thumb { background:#e0dbd2; border-radius:2px; }
+  .bm-dd-empty { padding:36px 16px; text-align:center; color:#bbb; font-size:13px; line-height:1.8; }
+  .bm-item { display:flex; align-items:flex-start; gap:8px; padding:9px 10px; border-radius:8px; cursor:default; transition:background 0.12s; }
+  .bm-item:hover { background:#F7F5F2; }
+  .bm-item-content { flex:1; min-width:0; }
+  .bm-item-tag { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--navy); opacity:0.55; margin-bottom:3px; }
+  .bm-item-headline { font-family:'Noto Serif KR',serif; font-size:13px; font-weight:600; color:#111827; line-height:1.45; }
+  .bm-rm-btn { flex-shrink:0; background:none; border:none; cursor:pointer; color:#ccc; font-size:16px; padding:1px 4px; line-height:1; transition:color 0.15s; margin-top:1px; }
+  .bm-rm-btn:hover { color:#EF5350; }
 
   .ios-hint { background:var(--navy); color:#FAF8F5; border-radius:8px; padding:14px 18px; margin-bottom:18px; font-size:13px; line-height:1.7; display:none; }
   .ios-hint.show { display:block; }
@@ -157,9 +177,12 @@
       <div class="meta">
         <div class="meta-date"><span class="live"></span><span id="hdate"></span></div>
         <div class="meta-time" id="htime"></div>
-        <button class="notif-toggle" id="notif-toggle" onclick="handleNotifBtn()">
-          <span class="nb-dot"></span><span id="notif-toggle-label">알림 OFF</span>
-        </button>
+        <div class="meta-btns">
+          <button class="notif-toggle" id="notif-toggle" onclick="handleNotifBtn()">
+            <span class="nb-dot"></span><span id="notif-toggle-label">알림 OFF</span>
+          </button>
+          <button class="bm-hdr-btn" id="bm-hdr-btn" onclick="toggleBmDropdown(event)" title="북마크">🔖</button>
+        </div>
       </div>
     </div>
   </div>
@@ -168,9 +191,16 @@
     <button class="tab on" id="tab-econ" onclick="switchTab('econ',this)">경제 상황</button>
     <button class="tab" id="tab-pol" onclick="switchTab('pol',this)">정치·사회</button>
     <button class="tab" id="tab-con" onclick="switchTab('con',this)">소비자 이슈</button>
-    <button class="tab" id="tab-bookmark" onclick="openBookmarks(this)">북마크</button>
     <button class="tab" id="tab-archive" onclick="openArchiveList()">아카이브</button>
   </div>
+</div>
+
+<div class="bm-dropdown" id="bm-dropdown">
+  <div class="bm-dd-head">
+    <span class="bm-dd-title">북마크</span>
+    <button class="bm-dd-close" onclick="closeBmDropdown()">×</button>
+  </div>
+  <div class="bm-dd-body" id="bm-dd-body"></div>
 </div>
 
 <div class="ticker" id="ticker">
@@ -189,7 +219,6 @@
   <div class="panel on" id="panel-econ"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
   <div class="panel" id="panel-pol"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
   <div class="panel" id="panel-con"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
-  <div class="panel" id="panel-bookmark"></div>
   <div class="panel" id="panel-archive"></div>
   <div class="update-bar" id="ubar"></div>
 </div>
@@ -510,13 +539,11 @@
       if (d) bms[cardId] = d;
     }
     localStorage.setItem('bookmarks', JSON.stringify(bms));
-    // Update all matching buttons in current DOM
     document.querySelectorAll(`[data-bm-id="${cardId}"]`).forEach(btn => {
       btn.classList.toggle('on', !!bms[cardId]);
     });
-    // Re-render bookmark panel if currently visible
-    const panel = document.getElementById('panel-bookmark');
-    if (panel && panel.classList.contains('on')) renderBookmarkPanel();
+    updateBmBtn();
+    if (document.getElementById('bm-dropdown').classList.contains('open')) renderBmDropdown();
   };
 
   function cardHtml(cardId, c, tc, isOn) {
@@ -524,24 +551,50 @@
     return `<div class="card ${tc}"><div class="card-bar"></div><div class="card-inner">${bmBtn(cardId,isOn)}<span class="tag">${c.tag||''}</span><div class="headline">${c.headline||''}</div><div class="body-text">${c.body||''}</div>${c.insight?`<div class="insight"><span class="i-label">소비자학 관점</span>${c.insight}</div>`:''}${sources}</div></div>`;
   }
 
-  function renderBookmarkPanel() {
-    const panel = document.getElementById('panel-bookmark');
-    const bms = getBookmarks();
-    const entries = Object.entries(bms);
-    if (!entries.length) {
-      panel.innerHTML = '<div class="empty"><p>저장된 북마크가 없어요.<br>카드 오른쪽 상단의 책갈피 아이콘을 눌러 저장해보세요.</p></div>';
-      return;
-    }
-    panel.innerHTML = `<div class="grid">${entries.map(([id, c]) => cardHtml(id, c, c.tc||'', true)).join('')}</div>`;
+  function updateBmBtn() {
+    const btn = document.getElementById('bm-hdr-btn');
+    if (btn) btn.classList.toggle('has-bm', Object.keys(getBookmarks()).length > 0);
   }
 
-  window.openBookmarks = function(btn) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
-    btn.classList.add('on');
-    document.getElementById('panel-bookmark').classList.add('on');
-    renderBookmarkPanel();
+  function renderBmDropdown() {
+    const body = document.getElementById('bm-dd-body');
+    const entries = Object.entries(getBookmarks());
+    if (!entries.length) {
+      body.innerHTML = '<div class="bm-dd-empty">저장된 북마크가 없어요</div>';
+      return;
+    }
+    body.innerHTML = entries.map(([id, c]) => `
+      <div class="bm-item">
+        <div class="bm-item-content">
+          <div class="bm-item-tag">${c.tag||''}</div>
+          <div class="bm-item-headline">${c.headline||''}</div>
+        </div>
+        <button class="bm-rm-btn" onclick="toggleBookmark('${id}')" title="북마크 제거">×</button>
+      </div>`).join('');
+  }
+
+  window.toggleBmDropdown = function(e) {
+    e.stopPropagation();
+    const dd = document.getElementById('bm-dropdown');
+    if (dd.classList.contains('open')) { dd.classList.remove('open'); return; }
+    const rect = document.getElementById('bm-hdr-btn').getBoundingClientRect();
+    dd.style.top  = (rect.bottom + 8) + 'px';
+    dd.style.right = (window.innerWidth - rect.right) + 'px';
+    dd.style.left = 'auto';
+    renderBmDropdown();
+    dd.classList.add('open');
   };
+
+  window.closeBmDropdown = function() {
+    document.getElementById('bm-dropdown').classList.remove('open');
+  };
+
+  document.addEventListener('click', function(e) {
+    const dd = document.getElementById('bm-dropdown');
+    if (dd && dd.classList.contains('open') && !dd.contains(e.target)) dd.classList.remove('open');
+  });
+
+  updateBmBtn();
 
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
