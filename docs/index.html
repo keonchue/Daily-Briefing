@@ -60,7 +60,7 @@
   .card-bar { height:3px; background:var(--navy); }
   .card.pol .card-bar { background:#1B5E3B; }
   .card.con .card-bar { background:#7B4A00; }
-  .card-inner { padding:18px 18px 14px; flex:1; display:flex; flex-direction:column; }
+  .card-inner { padding:18px 18px 14px; flex:1; display:flex; flex-direction:column; position:relative; }
   .tag { display:inline-block; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.12em; text-transform:uppercase; padding:4px 10px; border-radius:20px; margin-bottom:12px; background:rgba(0,14,92,0.07); color:var(--navy); }
   .card.pol .tag { background:rgba(27,94,59,0.07); color:#1B5E3B; }
   .card.con .tag { background:rgba(123,74,0,0.07); color:#7B4A00; }
@@ -87,6 +87,19 @@
   .notif-toggle.on { border-color:rgba(102,187,106,0.5); color:#66BB6A; background:rgba(102,187,106,0.1); }
   .notif-toggle .nb-dot { width:6px; height:6px; border-radius:50%; background:#66BB6A; flex-shrink:0; display:none; }
   .notif-toggle.on .nb-dot { display:inline-block; }
+
+  .bm-btn { position:absolute; top:12px; right:12px; background:none; border:none; cursor:pointer; padding:3px; color:rgba(0,14,92,0.22); line-height:0; transition:color 0.2s; z-index:1; }
+  .bm-btn:hover { color:var(--gold); }
+  .bm-btn.on { color:var(--gold); }
+  .bm-btn svg { stroke:currentColor; fill:none; transition:fill 0.2s; }
+  .bm-btn.on svg { fill:currentColor; }
+  .card.pol .bm-btn { color:rgba(27,94,59,0.22); }
+  .card.pol .bm-btn:hover, .card.pol .bm-btn.on { color:#1B5E3B; }
+  .card.con .bm-btn { color:rgba(123,74,0,0.22); }
+  .card.con .bm-btn:hover, .card.con .bm-btn.on { color:#7B4A00; }
+
+  .bm-section-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:#aaa; margin:20px 0 10px; }
+  .bm-section-label:first-child { margin-top:0; }
 
   .ios-hint { background:var(--navy); color:#FAF8F5; border-radius:8px; padding:14px 18px; margin-bottom:18px; font-size:13px; line-height:1.7; display:none; }
   .ios-hint.show { display:block; }
@@ -139,6 +152,7 @@
     <button class="tab on" id="tab-econ" onclick="switchTab('econ',this)">경제 상황</button>
     <button class="tab" id="tab-pol" onclick="switchTab('pol',this)">정치·사회</button>
     <button class="tab" id="tab-con" onclick="switchTab('con',this)">소비자 이슈</button>
+    <button class="tab" id="tab-bookmark" onclick="openBookmarks(this)">북마크</button>
     <button class="tab" id="tab-archive" onclick="openArchiveList()">아카이브</button>
   </div>
 </div>
@@ -157,6 +171,7 @@
   <div class="panel on" id="panel-econ"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
   <div class="panel" id="panel-pol"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
   <div class="panel" id="panel-con"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
+  <div class="panel" id="panel-bookmark"></div>
   <div class="panel" id="panel-archive"></div>
   <div class="update-bar" id="ubar"></div>
 </div>
@@ -225,17 +240,12 @@
         if (!secData || !secData.cards || !secData.cards.length) {
           return '<div class="empty"><p>데이터가 없습니다.</p></div>';
         }
-        const cards = secData.cards.map(c => `
-          <div class="card ${tc}">
-            <div class="card-bar"></div>
-            <div class="card-inner">
-              <span class="tag">${c.tag||''}</span>
-              <div class="headline">${c.headline||''}</div>
-              <div class="body-text">${c.body||''}</div>
-              ${c.insight ? `<div class="insight"><span class="i-label">소비자학 관점</span>${c.insight}</div>` : ''}
-              ${(c.sources && c.sources.length) ? `<div class="sources"><span class="src-label">출처</span>${c.sources.map(src => `<a class="src-link" href="${src.url||'#'}" target="_blank" rel="noopener">${src.title||'출처'}</a>`).join('')}</div>` : ''}
-            </div>
-          </div>`).join('');
+        const bms = getBookmarks();
+        const cards = secData.cards.map((c, i) => {
+          const cardId = `arch-${date}-${secId}-${i}`;
+          window._cardData[cardId] = { ...c, tc };
+          return cardHtml(cardId, c, tc, !!bms[cardId]);
+        }).join('');
         return `<div class="summary"><div class="sum-label">요약</div><div class="sum-text">${secData.summary||''}</div></div><div class="grid">${cards}</div>`;
       }
 
@@ -272,25 +282,13 @@
       document.getElementById('panel-' + id).innerHTML = '<div class="empty"><p>아직 오늘의 브리핑이 없어요.<br>매일 오전 7시에 자동 업데이트됩니다.</p></div>';
       return;
     }
-    const cards = data.cards.map(c => `
-      <div class="card ${tc}">
-        <div class="card-bar"></div>
-        <div class="card-inner">
-          <span class="tag">${c.tag||''}</span>
-          <div class="headline">${c.headline||''}</div>
-          <div class="body-text">${c.body||''}</div>
-          ${c.insight ? `<div class="insight"><span class="i-label">소비자학 관점</span>${c.insight}</div>` : ''}
-          ${(c.sources && c.sources.length) ? `
-            <div class="sources">
-              <span class="src-label">출처</span>
-              ${c.sources.map(s => `<a class="src-link" href="${s.url||'#'}" target="_blank" rel="noopener">${s.title||'출처'}</a>`).join('')}
-            </div>` : (c.source_ids && c.source_ids.length ? `
-            <div class="sources">
-              <span class="src-label">출처</span>
-              ${c.source_ids.map(id => `<span class="src-label">${id}</span>`).join('')}
-            </div>` : '')}
-        </div>
-      </div>`).join('');
+    const bms = getBookmarks();
+    const cards = data.cards.map((c, i) => {
+      const cardId = `today-${id}-${i}`;
+      window._cardData[cardId] = { ...c, tc };
+      const sources = (c.sources && c.sources.length) ? `<div class="sources"><span class="src-label">출처</span>${c.sources.map(s=>`<a class="src-link" href="${s.url||'#'}" target="_blank" rel="noopener">${s.title||'출처'}</a>`).join('')}</div>` : (c.source_ids && c.source_ids.length ? `<div class="sources"><span class="src-label">출처</span>${c.source_ids.map(sid=>`<span class="src-label">${sid}</span>`).join('')}</div>` : '');
+      return cardHtml(cardId, c, tc, !!bms[cardId]);
+    }).join('');
     document.getElementById('panel-' + id).innerHTML = `
       <div class="summary"><div class="sum-label">오늘의 요약</div><div class="sum-text">${data.summary||''}</div></div>
       <div class="grid">${cards}</div>`;
@@ -362,6 +360,61 @@
     } else {
       if (typeof window.askNotif === 'function') window.askNotif();
     }
+  };
+
+  // ── 북마크 ──────────────────────────────────────────────────────────────────
+  window._cardData = {};
+
+  function getBookmarks() {
+    try { return JSON.parse(localStorage.getItem('bookmarks') || '{}'); } catch { return {}; }
+  }
+
+  const BM_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
+
+  function bmBtn(cardId, isOn) {
+    return `<button class="bm-btn${isOn?' on':''}" data-bm-id="${cardId}" onclick="toggleBookmark('${cardId}')" title="북마크">${BM_SVG}</button>`;
+  }
+
+  window.toggleBookmark = function(cardId) {
+    const bms = getBookmarks();
+    if (bms[cardId]) {
+      delete bms[cardId];
+    } else {
+      const d = window._cardData[cardId];
+      if (d) bms[cardId] = d;
+    }
+    localStorage.setItem('bookmarks', JSON.stringify(bms));
+    // Update all matching buttons in current DOM
+    document.querySelectorAll(`[data-bm-id="${cardId}"]`).forEach(btn => {
+      btn.classList.toggle('on', !!bms[cardId]);
+    });
+    // Re-render bookmark panel if currently visible
+    const panel = document.getElementById('panel-bookmark');
+    if (panel && panel.classList.contains('on')) renderBookmarkPanel();
+  };
+
+  function cardHtml(cardId, c, tc, isOn) {
+    const sources = (c.sources && c.sources.length) ? `<div class="sources"><span class="src-label">출처</span>${c.sources.map(s=>`<a class="src-link" href="${s.url||'#'}" target="_blank" rel="noopener">${s.title||'출처'}</a>`).join('')}</div>` : '';
+    return `<div class="card ${tc}"><div class="card-bar"></div><div class="card-inner">${bmBtn(cardId,isOn)}<span class="tag">${c.tag||''}</span><div class="headline">${c.headline||''}</div><div class="body-text">${c.body||''}</div>${c.insight?`<div class="insight"><span class="i-label">소비자학 관점</span>${c.insight}</div>`:''}${sources}</div></div>`;
+  }
+
+  function renderBookmarkPanel() {
+    const panel = document.getElementById('panel-bookmark');
+    const bms = getBookmarks();
+    const entries = Object.entries(bms);
+    if (!entries.length) {
+      panel.innerHTML = '<div class="empty"><p>저장된 북마크가 없어요.<br>카드 오른쪽 상단의 책갈피 아이콘을 눌러 저장해보세요.</p></div>';
+      return;
+    }
+    panel.innerHTML = `<div class="grid">${entries.map(([id, c]) => cardHtml(id, c, c.tc||'', true)).join('')}</div>`;
+  }
+
+  window.openBookmarks = function(btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+    btn.classList.add('on');
+    document.getElementById('panel-bookmark').classList.add('on');
+    renderBookmarkPanel();
   };
 
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
