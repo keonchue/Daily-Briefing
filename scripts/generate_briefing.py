@@ -114,11 +114,11 @@ def fetch_kospi_history():
 
 
 def fetch_nasdaq_history(api_key):
-    """Alpha Vantage에서 NASDAQ 30거래일 히스토리 가져오기"""
+    """Alpha Vantage QQQ(NASDAQ-100 ETF)로 30거래일 히스토리 가져오기"""
     try:
         url = (
             f"https://www.alphavantage.co/query"
-            f"?function=TIME_SERIES_DAILY&symbol=IXIC&outputsize=compact&apikey={api_key}"
+            f"?function=TIME_SERIES_DAILY&symbol=QQQ&outputsize=compact&apikey={api_key}"
         )
         req = urllib.request.Request(url, headers=HEADERS)
         with urllib.request.urlopen(req, timeout=15) as res:
@@ -136,7 +136,7 @@ def fetch_nasdaq_history(api_key):
         current = history[-1]["close"]
         prev = history[-2]["close"] if len(history) > 1 else current
         change_pct = round((current - prev) / prev * 100, 2) if prev else 0
-        print(f"     v NASDAQ 히스토리: {len(history)}일, 현재 {current:,.2f} ({change_pct:+.2f}%)")
+        print(f"     v NASDAQ(QQQ) 히스토리: {len(history)}일, 현재 {current:,.2f} ({change_pct:+.2f}%)")
         return {"current": round(current, 2), "change_pct": change_pct, "history": history}
     except Exception as e:
         print(f"     x NASDAQ 히스토리 조회 실패: {e}")
