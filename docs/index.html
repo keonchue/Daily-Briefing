@@ -36,6 +36,16 @@
   .tab { flex:1; padding:13px 8px; text-align:center; font-size:12px; font-weight:400; color:rgba(250,248,245,0.38); border:none; background:transparent; cursor:pointer; border-bottom:2px solid transparent; letter-spacing:0.03em; transition:all 0.2s; font-family:'Noto Sans KR',sans-serif; }
   .tab.on { color:#FAF8F5; border-bottom-color:var(--gold); font-weight:500; }
 
+  .charts-row { background:#000C22; border-bottom:1px solid rgba(201,176,114,0.1); display:none; }
+  .charts-inner { max-width:1080px; margin:0 auto; padding:12px 24px 14px; display:flex; gap:12px; }
+  .chart-card { flex:1; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:12px 14px 10px; min-width:0; }
+  .chart-lbl { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.14em; color:rgba(250,248,245,0.38); text-transform:uppercase; margin-bottom:4px; }
+  .chart-val { font-family:'DM Mono',monospace; font-size:15px; color:#FAF8F5; font-weight:500; }
+  .chart-chg { font-family:'DM Mono',monospace; font-size:10px; margin-left:5px; }
+  .chart-chg.up { color:#66BB6A; }
+  .chart-chg.dn { color:#EF5350; }
+  .chart-svg { margin-top:8px; overflow:hidden; border-radius:2px; }
+
   .ticker { background:#000C22; padding:8px 24px; font-family:'DM Mono',monospace; font-size:11px; display:flex; gap:32px; overflow-x:auto; }
   .ticker::-webkit-scrollbar { display:none; }
   .ti { color:rgba(250,248,245,0.4); white-space:nowrap; }
@@ -160,6 +170,8 @@
 <div class="ticker" id="ticker">
   <div class="ti">브리핑 로딩 중...</div>
 </div>
+
+<div class="charts-row" id="charts-row"></div>
 
 <div class="main">
   <div class="ios-hint" id="ios-hint">
@@ -294,6 +306,44 @@
       <div class="grid">${cards}</div>`;
   }
 
+  function renderCharts(mc) {
+    function sparkline(history, color) {
+      if (!history || history.length < 2) return '';
+      const prices = history.map(h => h.close);
+      const min = Math.min(...prices), max = Math.max(...prices);
+      const range = max - min || 1;
+      const W = 300, H = 44;
+      const pts = prices.map((p, i) => {
+        const x = (i / (prices.length - 1)) * W;
+        const y = H - 4 - ((p - min) / range) * (H - 8);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      return `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="display:block">
+        <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>`;
+    }
+    const defs = [
+      { key: 'kospi',  label: 'KOSPI' },
+      { key: 'nasdaq', label: 'NASDAQ' },
+    ];
+    const cards = defs.map(({ key, label }) => {
+      const d = mc[key];
+      if (!d) return '';
+      const up = d.change_pct >= 0;
+      const color = up ? '#66BB6A' : '#EF5350';
+      const arrow = up ? '▲' : '▼';
+      return `<div class="chart-card">
+        <div class="chart-lbl">${label} · 30일</div>
+        <div><span class="chart-val">${d.current.toLocaleString()}</span><span class="chart-chg ${up?'up':'dn'}">${arrow}${Math.abs(d.change_pct).toFixed(2)}%</span></div>
+        <div class="chart-svg">${sparkline(d.history, color)}</div>
+      </div>`;
+    }).filter(Boolean).join('');
+    if (!cards) return;
+    const row = document.getElementById('charts-row');
+    row.innerHTML = `<div class="charts-inner">${cards}</div>`;
+    row.style.display = 'block';
+  }
+
   async function loadBriefing() {
     try {
       const res = await fetch('briefing.json?t=' + Date.now());
@@ -315,6 +365,7 @@
         <div class="ti">기준금리 <b>${rate !== '—' ? rate + '%' : '—'}</b></div>
         <div class="ti">업데이트 <b>${data.date_kr || '—'}</b></div>`;
       document.getElementById('ubar').textContent = '마지막 업데이트: ' + (data.date_kr || '—');
+      if (data.market_charts) renderCharts(data.market_charts);
     } catch {
       ['econ','pol','con'].forEach(id => {
         document.getElementById('panel-' + id).innerHTML = '<div class="empty"><p>브리핑을 불러오지 못했어요.<br>매일 오전 7시에 자동 업데이트됩니다.</p></div>';

@@ -17,6 +17,7 @@ jobs:
       - name: 브리핑 생성
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
         run: python scripts/generate_briefing.py
       - name: 커밋 푸시
         run: |

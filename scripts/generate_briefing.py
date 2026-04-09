@@ -8,6 +8,7 @@ today = datetime.now(KST).strftime("%Y년 %m월 %d일")
 today_iso = datetime.now(KST).strftime("%Y-%m-%d")
 
 client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+AV_KEY = os.environ.get("ALPHA_VANTAGE_API_KEY", "")
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; DailyBriefingBot/1.0)"}
 
 RSS_FEEDS = {
@@ -86,6 +87,62 @@ def fetch_bok_indicators():
     return indicators
 
 
+def fetch_kospi_history():
+    """Yahoo Finance에서 KOSPI 30거래일 히스토리 가져오기"""
+    try:
+        url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EKS11?interval=1d&range=45d"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=10) as res:
+            data = json.loads(res.read())
+        result = data["chart"]["result"][0]
+        timestamps = result["timestamp"]
+        closes = result["indicators"]["quote"][0]["close"]
+        pairs = [(ts, c) for ts, c in zip(timestamps, closes) if c is not None]
+        pairs = pairs[-30:]
+        history = [
+            {"date": datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d"), "close": round(c, 2)}
+            for ts, c in pairs
+        ]
+        current = history[-1]["close"]
+        prev = history[-2]["close"] if len(history) > 1 else current
+        change_pct = round((current - prev) / prev * 100, 2) if prev else 0
+        print(f"     v KOSPI 히스토리: {len(history)}일, 현재 {current:,.2f} ({change_pct:+.2f}%)")
+        return {"current": round(current, 2), "change_pct": change_pct, "history": history}
+    except Exception as e:
+        print(f"     x KOSPI 히스토리 조회 실패: {e}")
+        return None
+
+
+def fetch_nasdaq_history(api_key):
+    """Alpha Vantage에서 NASDAQ 30거래일 히스토리 가져오기"""
+    try:
+        url = (
+            f"https://www.alphavantage.co/query"
+            f"?function=TIME_SERIES_DAILY&symbol=IXIC&outputsize=compact&apikey={api_key}"
+        )
+        req = urllib.request.Request(url, headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=15) as res:
+            data = json.loads(res.read())
+        ts_data = data.get("Time Series (Daily)", {})
+        if not ts_data:
+            note = data.get("Note", data.get("Information", ""))
+            print(f"     x NASDAQ 데이터 없음: {str(note)[:120]}")
+            return None
+        sorted_dates = sorted(ts_data.keys())[-30:]
+        history = [
+            {"date": d, "close": round(float(ts_data[d]["4. close"]), 2)}
+            for d in sorted_dates
+        ]
+        current = history[-1]["close"]
+        prev = history[-2]["close"] if len(history) > 1 else current
+        change_pct = round((current - prev) / prev * 100, 2) if prev else 0
+        print(f"     v NASDAQ 히스토리: {len(history)}일, 현재 {current:,.2f} ({change_pct:+.2f}%)")
+        return {"current": round(current, 2), "change_pct": change_pct, "history": history}
+    except Exception as e:
+        print(f"     x NASDAQ 히스토리 조회 실패: {e}")
+        return None
+
+
 def parse_json_safe(raw):
     raw = re.sub(r'```json|```', '', raw).strip()
     start = raw.find('{')
@@ -143,6 +200,18 @@ def main():
     bok = fetch_bok_indicators()
     print(f"     환율: {bok['exchange']}원 | KOSPI: {bok['kospi']}")
 
+    print("  -> 시장 차트 데이터 수집 중...")
+    market_charts = {}
+    kospi_hist = fetch_kospi_history()
+    if kospi_hist:
+        market_charts["kospi"] = kospi_hist
+    if AV_KEY:
+        nasdaq_hist = fetch_nasdaq_history(AV_KEY)
+        if nasdaq_hist:
+            market_charts["nasdaq"] = nasdaq_hist
+    else:
+        print("     ! ALPHA_VANTAGE_API_KEY 없음, NASDAQ 차트 스킵")
+
     print("  -> 경제 뉴스 수집 중...")
     econ_news = fetch_section_news("econ")
     time.sleep(1)
@@ -170,7 +239,12 @@ def main():
             sections[key] = {"summary": "오류 발생", "cards": []}
         time.sleep(30)
 
-    briefing = {"date": today_iso, "date_kr": today, "sections": sections}
+    briefing = {
+        "date": today_iso,
+        "date_kr": today,
+        "market_charts": market_charts,
+        "sections": sections,
+    }
     os.makedirs("docs", exist_ok=True)
     with open("docs/briefing.json", "w", encoding="utf-8") as f:
         json.dump(briefing, f, ensure_ascii=False, indent=2)
