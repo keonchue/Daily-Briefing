@@ -37,14 +37,17 @@
   .tab.on { color:#FAF8F5; border-bottom-color:var(--gold); font-weight:500; }
 
   .charts-row { background:#000C22; border-bottom:1px solid rgba(201,176,114,0.1); display:none; }
-  .charts-inner { max-width:1080px; margin:0 auto; padding:12px 24px 14px; display:flex; gap:12px; }
-  .chart-card { flex:1; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:12px 14px 10px; min-width:0; }
-  .chart-lbl { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.14em; color:rgba(250,248,245,0.38); text-transform:uppercase; margin-bottom:4px; }
+  .charts-inner { max-width:1080px; margin:0 auto; padding:12px 24px 14px; }
+  .chart-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .chart-tabs { display:flex; gap:5px; }
+  .chart-tab { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; padding:4px 12px; border-radius:20px; border:1px solid rgba(255,255,255,0.12); background:transparent; color:rgba(250,248,245,0.35); cursor:pointer; transition:all 0.18s; }
+  .chart-tab.on { background:rgba(255,255,255,0.09); color:#FAF8F5; border-color:rgba(255,255,255,0.28); }
+  .chart-tab:hover:not(.on) { color:rgba(250,248,245,0.6); border-color:rgba(255,255,255,0.2); }
   .chart-val { font-family:'DM Mono',monospace; font-size:15px; color:#FAF8F5; font-weight:500; }
   .chart-chg { font-family:'DM Mono',monospace; font-size:10px; margin-left:5px; }
   .chart-chg.up { color:#66BB6A; }
   .chart-chg.dn { color:#EF5350; }
-  .chart-svg { margin-top:8px; overflow:hidden; border-radius:2px; }
+  .chart-svg { overflow:hidden; border-radius:2px; }
 
   .ticker { background:#000C22; padding:8px 24px; font-family:'DM Mono',monospace; font-size:11px; display:flex; gap:32px; overflow-x:auto; }
   .ticker::-webkit-scrollbar { display:none; }
@@ -312,36 +315,53 @@
       const prices = history.map(h => h.close);
       const min = Math.min(...prices), max = Math.max(...prices);
       const range = max - min || 1;
-      const W = 300, H = 44;
+      const W = 600, H = 52;
       const pts = prices.map((p, i) => {
         const x = (i / (prices.length - 1)) * W;
-        const y = H - 4 - ((p - min) / range) * (H - 8);
+        const y = H - 4 - ((p - min) / range) * (H - 10);
         return `${x.toFixed(1)},${y.toFixed(1)}`;
       }).join(' ');
       return `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="display:block">
-        <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>`;
     }
-    const defs = [
-      { key: 'kospi',  label: 'KOSPI' },
-      { key: 'nasdaq', label: 'NASDAQ' },
-    ];
-    const cards = defs.map(({ key, label }) => {
+
+    function showChart(key) {
       const d = mc[key];
-      if (!d) return '';
+      if (!d) return;
       const up = d.change_pct >= 0;
       const color = up ? '#66BB6A' : '#EF5350';
       const arrow = up ? '▲' : '▼';
-      return `<div class="chart-card">
-        <div class="chart-lbl">${label} · 30일</div>
-        <div><span class="chart-val">${d.current.toLocaleString()}</span><span class="chart-chg ${up?'up':'dn'}">${arrow}${Math.abs(d.change_pct).toFixed(2)}%</span></div>
-        <div class="chart-svg">${sparkline(d.history, color)}</div>
-      </div>`;
-    }).filter(Boolean).join('');
-    if (!cards) return;
+      document.getElementById('chart-val').textContent = d.current.toLocaleString();
+      const chgEl = document.getElementById('chart-chg');
+      chgEl.textContent = `${arrow}${Math.abs(d.change_pct).toFixed(2)}%`;
+      chgEl.className = `chart-chg ${up ? 'up' : 'dn'}`;
+      document.getElementById('chart-svg-area').innerHTML = sparkline(d.history, color);
+    }
+
+    window.switchChart = function(key, btn) {
+      document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('on'));
+      btn.classList.add('on');
+      showChart(key);
+    };
+
+    const available = [{ key:'kospi', label:'KOSPI' }, { key:'nasdaq', label:'NASDAQ' }].filter(d => mc[d.key]);
+    if (!available.length) return;
+
+    const tabs = available.map(({ key, label }, i) =>
+      `<button class="chart-tab${i===0?' on':''}" onclick="switchChart('${key}',this)">${label}</button>`
+    ).join('');
+
     const row = document.getElementById('charts-row');
-    row.innerHTML = `<div class="charts-inner">${cards}</div>`;
+    row.innerHTML = `<div class="charts-inner">
+      <div class="chart-header">
+        <div class="chart-tabs">${tabs}</div>
+        <div><span id="chart-val"></span><span id="chart-chg" class="chart-chg"></span></div>
+      </div>
+      <div id="chart-svg-area" class="chart-svg"></div>
+    </div>`;
     row.style.display = 'block';
+    showChart(available[0].key);
   }
 
   async function loadBriefing() {
