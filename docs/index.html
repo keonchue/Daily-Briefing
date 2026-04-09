@@ -114,28 +114,56 @@
   .card.con .bm-btn { color:rgba(123,74,0,0.22); }
   .card.con .bm-btn:hover, .card.con .bm-btn.on { color:#7B4A00; }
 
+  /* 헤더 아이콘 버튼 */
   .meta-btns { display:flex; align-items:center; gap:6px; justify-content:flex-end; margin-top:7px; }
-  .bm-hdr-btn { display:inline-flex; align-items:center; padding:4px 9px; border-radius:20px; border:1px solid rgba(250,248,245,0.15); background:rgba(255,255,255,0.06); cursor:pointer; font-size:13px; color:rgba(250,248,245,0.5); transition:all 0.2s; line-height:1; }
-  .bm-hdr-btn:hover { border-color:rgba(250,248,245,0.3); color:rgba(250,248,245,0.85); }
-  .bm-hdr-btn.has-bm { border-color:rgba(201,176,114,0.45); color:var(--gold); background:rgba(201,176,114,0.08); }
+  .hd-icon-btn { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:8px; border:1px solid rgba(250,248,245,0.15); background:rgba(255,255,255,0.06); cursor:pointer; font-size:14px; color:rgba(250,248,245,0.55); transition:all 0.2s; padding:0; }
+  .hd-icon-btn:hover { border-color:rgba(250,248,245,0.3); color:#FAF8F5; background:rgba(255,255,255,0.1); }
+  .hd-icon-btn.active { border-color:rgba(201,176,114,0.5); color:var(--gold); background:rgba(201,176,114,0.08); }
 
-  .bm-dropdown { position:fixed; width:320px; max-height:72vh; background:white; border-radius:14px; box-shadow:0 12px 40px rgba(0,0,0,0.18),0 2px 8px rgba(0,0,0,0.08); border:1px solid var(--border); z-index:2000; display:none; flex-direction:column; overflow:hidden; }
-  .bm-dropdown.open { display:flex; animation:fadein 0.15s ease; }
-  .bm-dd-head { padding:13px 16px 11px; border-bottom:1px solid #F0EDE8; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
-  .bm-dd-title { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:var(--navy); }
-  .bm-dd-close { background:none; border:none; cursor:pointer; color:#bbb; font-size:18px; line-height:1; padding:0 2px; transition:color 0.15s; }
-  .bm-dd-close:hover { color:#888; }
-  .bm-dd-body { overflow-y:auto; flex:1; padding:6px; }
-  .bm-dd-body::-webkit-scrollbar { width:4px; }
-  .bm-dd-body::-webkit-scrollbar-thumb { background:#e0dbd2; border-radius:2px; }
-  .bm-dd-empty { padding:36px 16px; text-align:center; color:#bbb; font-size:13px; line-height:1.8; }
-  .bm-item { display:flex; align-items:flex-start; gap:8px; padding:9px 10px; border-radius:8px; cursor:default; transition:background 0.12s; }
-  .bm-item:hover { background:#F7F5F2; }
+  /* 검색 바 */
+  .search-bar { background:#001229; border-bottom:1px solid rgba(201,176,114,0.15); display:none; }
+  .search-bar.open { display:block; }
+  .search-inner { max-width:1080px; margin:0 auto; padding:12px 24px; display:flex; gap:8px; }
+  .search-input { flex:1; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:9px 14px; font-family:'Noto Sans KR',sans-serif; font-size:13px; color:#FAF8F5; outline:none; transition:border-color 0.2s; }
+  .search-input::placeholder { color:rgba(250,248,245,0.28); }
+  .search-input:focus { border-color:rgba(201,176,114,0.5); }
+  .search-go { padding:9px 16px; background:var(--gold); color:var(--navy); border:none; border-radius:8px; font-family:'DM Mono',monospace; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .search-result-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:#aaa; margin-bottom:18px; }
+
+  /* 슬라이드 패널 */
+  .sp-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1500; display:none; }
+  .sp-overlay.open { display:block; }
+  .side-panel { position:fixed; top:0; right:0; height:100%; width:360px; max-width:90vw; background:#FAF8F5; z-index:1600; transform:translateX(100%); transition:transform 0.28s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; box-shadow:-8px 0 32px rgba(0,0,0,0.15); }
+  .side-panel.open { transform:translateX(0); }
+  .sp-hd { background:#00112E; padding:env(safe-area-inset-top,20px) 20px 16px; padding-top:calc(env(safe-area-inset-top,0px) + 20px); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+  .sp-title { font-family:'Noto Serif KR',serif; font-size:16px; font-weight:600; color:#FAF8F5; }
+  .sp-close { background:none; border:none; cursor:pointer; color:rgba(250,248,245,0.45); font-size:22px; line-height:1; padding:0 2px; transition:color 0.15s; }
+  .sp-close:hover { color:#FAF8F5; }
+  .sp-body { flex:1; overflow-y:auto; }
+  .sp-body::-webkit-scrollbar { width:4px; }
+  .sp-body::-webkit-scrollbar-thumb { background:#ddd; border-radius:2px; }
+  .sp-sec { border-bottom:1px solid #EAE6E0; }
+  .sp-sec-hd { padding:14px 20px 10px; display:flex; justify-content:space-between; align-items:center; }
+  .sp-sec-title { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:var(--navy); }
+  .sp-sec-count { font-family:'DM Mono',monospace; font-size:9px; color:#bbb; }
+  .sp-empty { padding:20px 20px 24px; color:#bbb; font-size:13px; line-height:1.7; }
+  .bm-item { display:flex; align-items:flex-start; gap:8px; padding:9px 20px; cursor:default; transition:background 0.12s; }
+  .bm-item:hover { background:#F0EDE8; }
   .bm-item-content { flex:1; min-width:0; }
   .bm-item-tag { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--navy); opacity:0.55; margin-bottom:3px; }
   .bm-item-headline { font-family:'Noto Serif KR',serif; font-size:13px; font-weight:600; color:#111827; line-height:1.45; }
   .bm-rm-btn { flex-shrink:0; background:none; border:none; cursor:pointer; color:#ccc; font-size:16px; padding:1px 4px; line-height:1; transition:color 0.15s; margin-top:1px; }
   .bm-rm-btn:hover { color:#EF5350; }
+  .arch-sp-item { padding:12px 20px; cursor:pointer; border-top:1px solid #F0EDE8; transition:background 0.12s; }
+  .arch-sp-item:hover { background:#F0EDE8; }
+  .arch-sp-date { font-family:'Noto Serif KR',serif; font-size:14px; font-weight:600; color:#111827; }
+  .arch-sp-sub { font-family:'DM Mono',monospace; font-size:10px; color:#aaa; margin-top:2px; }
+
+  /* 준비 중 */
+  .coming-soon { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 20px; text-align:center; }
+  .coming-soon-icon { font-size:40px; margin-bottom:16px; opacity:0.35; }
+  .coming-soon h2 { font-family:'Noto Serif KR',serif; font-size:20px; font-weight:600; color:#374151; margin-bottom:10px; }
+  .coming-soon p { font-size:14px; color:#9CA3AF; line-height:1.75; }
 
   .ios-hint { background:var(--navy); color:#FAF8F5; border-radius:8px; padding:14px 18px; margin-bottom:18px; font-size:13px; line-height:1.7; display:none; }
   .ios-hint.show { display:block; }
@@ -178,10 +206,11 @@
         <div class="meta-date"><span class="live"></span><span id="hdate"></span></div>
         <div class="meta-time" id="htime"></div>
         <div class="meta-btns">
+          <button class="hd-icon-btn" id="search-btn" onclick="toggleSearch()" title="검색">🔍</button>
+          <button class="hd-icon-btn" id="panel-btn" onclick="toggleSidePanel()" title="북마크 · 아카이브">🔖</button>
           <button class="notif-toggle" id="notif-toggle" onclick="handleNotifBtn()">
             <span class="nb-dot"></span><span id="notif-toggle-label">알림 OFF</span>
           </button>
-          <button class="bm-hdr-btn" id="bm-hdr-btn" onclick="toggleBmDropdown(event)" title="북마크">🔖</button>
         </div>
       </div>
     </div>
@@ -191,16 +220,25 @@
     <button class="tab on" id="tab-econ" onclick="switchTab('econ',this)">경제 상황</button>
     <button class="tab" id="tab-pol" onclick="switchTab('pol',this)">정치·사회</button>
     <button class="tab" id="tab-con" onclick="switchTab('con',this)">소비자 이슈</button>
-    <button class="tab" id="tab-archive" onclick="openArchiveList()">아카이브</button>
+    <button class="tab" id="tab-paper" onclick="switchTab('paper',this)">소비자 논문</button>
+    <button class="tab" id="tab-firm" onclick="switchTab('firm',this)">기업 분석</button>
   </div>
 </div>
 
-<div class="bm-dropdown" id="bm-dropdown">
-  <div class="bm-dd-head">
-    <span class="bm-dd-title">북마크</span>
-    <button class="bm-dd-close" onclick="closeBmDropdown()">×</button>
+<div class="search-bar" id="search-bar">
+  <div class="search-inner">
+    <input class="search-input" id="search-input" placeholder="키워드로 브리핑 검색..." onkeydown="if(event.key==='Enter')doSearch()">
+    <button class="search-go" onclick="doSearch()">검색</button>
   </div>
-  <div class="bm-dd-body" id="bm-dd-body"></div>
+</div>
+
+<div class="sp-overlay" id="sp-overlay" onclick="closeSidePanel()"></div>
+<div class="side-panel" id="side-panel">
+  <div class="sp-hd">
+    <span class="sp-title">북마크 · 아카이브</span>
+    <button class="sp-close" onclick="closeSidePanel()">×</button>
+  </div>
+  <div class="sp-body" id="sp-body"></div>
 </div>
 
 <div class="ticker" id="ticker">
@@ -219,7 +257,22 @@
   <div class="panel on" id="panel-econ"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
   <div class="panel" id="panel-pol"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
   <div class="panel" id="panel-con"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
+  <div class="panel" id="panel-paper">
+    <div class="coming-soon">
+      <div class="coming-soon-icon">📄</div>
+      <h2>준비 중입니다</h2>
+      <p>소비자학 관련 최신 논문 요약 서비스를<br>준비하고 있습니다.</p>
+    </div>
+  </div>
+  <div class="panel" id="panel-firm">
+    <div class="coming-soon">
+      <div class="coming-soon-icon">🏢</div>
+      <h2>준비 중입니다</h2>
+      <p>주요 기업의 소비자 전략 분석 서비스를<br>준비하고 있습니다.</p>
+    </div>
+  </div>
   <div class="panel" id="panel-archive"></div>
+  <div class="panel" id="panel-search"></div>
   <div class="update-bar" id="ubar"></div>
 </div>
 
@@ -233,38 +286,6 @@
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
     btn.classList.add('on');
     document.getElementById('panel-' + id).classList.add('on');
-  }
-
-  // 아카이브 목록 열기
-  async function openArchiveList() {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
-    document.getElementById('tab-archive').classList.add('on');
-    const panel = document.getElementById('panel-archive');
-    panel.classList.add('on');
-    panel.innerHTML = '<div class="loading"><div class="spinner"></div><p>아카이브 불러오는 중...</p></div>';
-    try {
-      const res = await fetch('archive/index.json?t=' + Date.now());
-      if (!res.ok) throw new Error();
-      const { dates } = await res.json();
-      const sorted = [...dates].sort((a, b) => b.localeCompare(a));
-      const items = sorted.map(d => {
-        const [y, m, day] = d.split('-');
-        const weekday = new Date(d).toLocaleDateString('ko-KR', { weekday: 'short' });
-        return `<div class="arch-item" onclick="openArchiveDate('${d}')">
-          <div class="arch-item-date">${m}월 ${parseInt(day)}일 (${weekday})</div>
-          <div class="arch-item-sub">${y} · 브리핑 보기 →</div>
-        </div>`;
-      }).join('');
-      panel.innerHTML = `
-        <div class="arch-header">
-          <div class="arch-title">브리핑 아카이브</div>
-          <div style="font-family:'DM Mono',monospace;font-size:11px;color:#aaa;">총 ${sorted.length}개</div>
-        </div>
-        <div class="arch-list">${items}</div>`;
-    } catch {
-      panel.innerHTML = '<div class="empty"><p>아카이브를 불러오지 못했어요.</p></div>';
-    }
   }
 
   // 특정 날짜 아카이브 열기
@@ -303,7 +324,7 @@
         panel.innerHTML = `
           <div class="arch-header">
             <div class="arch-title">${m}월 ${parseInt(d)}일 (${weekday}) 브리핑</div>
-            <button class="arch-back" onclick="openArchiveList()">← 목록으로</button>
+            <button class="arch-back" onclick="toggleSidePanel()">← 목록으로</button>
           </div>
           <div class="arch-detail-tabs">${tabs}</div>
           <div id="arch-content">${renderArchiveSection(activeSection)}</div>`;
@@ -543,7 +564,7 @@
       btn.classList.toggle('on', !!bms[cardId]);
     });
     updateBmBtn();
-    if (document.getElementById('bm-dropdown').classList.contains('open')) renderBmDropdown();
+    if (document.getElementById('side-panel').classList.contains('open')) renderSidePanel();
   };
 
   function cardHtml(cardId, c, tc, isOn) {
@@ -552,47 +573,157 @@
   }
 
   function updateBmBtn() {
-    const btn = document.getElementById('bm-hdr-btn');
-    if (btn) btn.classList.toggle('has-bm', Object.keys(getBookmarks()).length > 0);
+    const btn = document.getElementById('panel-btn');
+    if (btn) btn.classList.toggle('active', Object.keys(getBookmarks()).length > 0);
   }
 
-  function renderBmDropdown() {
-    const body = document.getElementById('bm-dd-body');
+  function renderSidePanel() {
+    const body = document.getElementById('sp-body');
     const entries = Object.entries(getBookmarks());
-    if (!entries.length) {
-      body.innerHTML = '<div class="bm-dd-empty">저장된 북마크가 없어요</div>';
-      return;
-    }
-    body.innerHTML = entries.map(([id, c]) => `
-      <div class="bm-item">
-        <div class="bm-item-content">
-          <div class="bm-item-tag">${c.tag||''}</div>
-          <div class="bm-item-headline">${c.headline||''}</div>
+    const bmHtml = entries.length
+      ? entries.map(([id, c]) => `
+          <div class="bm-item">
+            <div class="bm-item-content">
+              <div class="bm-item-tag">${c.tag||''}</div>
+              <div class="bm-item-headline">${c.headline||''}</div>
+            </div>
+            <button class="bm-rm-btn" onclick="toggleBookmark('${id}')" title="북마크 제거">×</button>
+          </div>`).join('')
+      : '<div class="sp-empty">저장된 북마크가 없어요</div>';
+
+    body.innerHTML = `
+      <div class="sp-sec">
+        <div class="sp-sec-hd">
+          <span class="sp-sec-title">북마크</span>
+          <span class="sp-sec-count">${entries.length}개</span>
         </div>
-        <button class="bm-rm-btn" onclick="toggleBookmark('${id}')" title="북마크 제거">×</button>
-      </div>`).join('');
+        ${bmHtml}
+      </div>
+      <div class="sp-sec" id="sp-arch-sec">
+        <div class="sp-sec-hd">
+          <span class="sp-sec-title">아카이브</span>
+        </div>
+        <div class="sp-empty">불러오는 중...</div>
+      </div>`;
+
+    renderSidePanelArchive();
   }
 
-  window.toggleBmDropdown = function(e) {
-    e.stopPropagation();
-    const dd = document.getElementById('bm-dropdown');
-    if (dd.classList.contains('open')) { dd.classList.remove('open'); return; }
-    const rect = document.getElementById('bm-hdr-btn').getBoundingClientRect();
-    dd.style.top  = (rect.bottom + 8) + 'px';
-    dd.style.right = (window.innerWidth - rect.right) + 'px';
-    dd.style.left = 'auto';
-    renderBmDropdown();
-    dd.classList.add('open');
+  async function renderSidePanelArchive() {
+    const sec = document.getElementById('sp-arch-sec');
+    if (!sec) return;
+    try {
+      const res = await fetch('archive/index.json?t=' + Date.now());
+      if (!res.ok) throw new Error();
+      const { dates } = await res.json();
+      const sorted = [...dates].sort((a, b) => b.localeCompare(a));
+      if (!sorted.length) {
+        sec.querySelector('.sp-empty').textContent = '저장된 브리핑이 없어요';
+        return;
+      }
+      const items = sorted.map(d => {
+        const [y, m, day] = d.split('-');
+        const weekday = new Date(d).toLocaleDateString('ko-KR', { weekday: 'short' });
+        return `<div class="arch-sp-item" onclick="openArchiveFromPanel('${d}')">
+          <div class="arch-sp-date">${m}월 ${parseInt(day)}일 (${weekday})</div>
+          <div class="arch-sp-sub">${y} · 브리핑 보기 →</div>
+        </div>`;
+      }).join('');
+      const hd = sec.querySelector('.sp-sec-hd');
+      hd.innerHTML = `<span class="sp-sec-title">아카이브</span><span class="sp-sec-count">${sorted.length}개</span>`;
+      hd.insertAdjacentHTML('afterend', items);
+      sec.querySelector('.sp-empty')?.remove();
+    } catch {
+      const empty = sec.querySelector('.sp-empty');
+      if (empty) empty.textContent = '아카이브를 불러오지 못했어요';
+    }
+  }
+
+  window.toggleSidePanel = function() {
+    const panel = document.getElementById('side-panel');
+    if (panel.classList.contains('open')) {
+      closeSidePanel();
+    } else {
+      renderSidePanel();
+      document.getElementById('sp-overlay').classList.add('open');
+      panel.classList.add('open');
+      document.getElementById('panel-btn').classList.add('active');
+    }
   };
 
-  window.closeBmDropdown = function() {
-    document.getElementById('bm-dropdown').classList.remove('open');
+  window.closeSidePanel = function() {
+    document.getElementById('side-panel').classList.remove('open');
+    document.getElementById('sp-overlay').classList.remove('open');
+    updateBmBtn();
   };
 
-  document.addEventListener('click', function(e) {
-    const dd = document.getElementById('bm-dropdown');
-    if (dd && dd.classList.contains('open') && !dd.contains(e.target)) dd.classList.remove('open');
-  });
+  window.openArchiveFromPanel = function(date) {
+    closeSidePanel();
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+    document.getElementById('panel-archive').classList.add('on');
+    openArchiveDate(date);
+  };
+
+  // ── 검색 ────────────────────────────────────────────────────────────────────
+  window.toggleSearch = function() {
+    const bar = document.getElementById('search-bar');
+    const btn = document.getElementById('search-btn');
+    const isOpen = bar.classList.toggle('open');
+    btn.classList.toggle('active', isOpen);
+    if (isOpen) {
+      document.getElementById('search-input').focus();
+    } else {
+      document.getElementById('search-input').value = '';
+      document.getElementById('panel-search').classList.remove('on');
+    }
+  };
+
+  window.doSearch = async function() {
+    const q = document.getElementById('search-input').value.trim();
+    if (!q) return;
+    const sp = document.getElementById('panel-search');
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+    sp.classList.add('on');
+    sp.innerHTML = '<div class="loading"><div class="spinner"></div><p>검색 중...</p></div>';
+    try {
+      const res = await fetch('archive/index.json?t=' + Date.now());
+      if (!res.ok) throw new Error();
+      const { dates } = await res.json();
+      const results = [];
+      await Promise.all(dates.map(async d => {
+        try {
+          const r = await fetch(`archive/${d}.json`);
+          if (!r.ok) return;
+          const data = await r.json();
+          const secMap = { econ: data.sections?.econ, pol: data.sections?.politics, con: data.sections?.consumer };
+          for (const [secId, sec] of Object.entries(secMap)) {
+            if (!sec?.cards) continue;
+            sec.cards.forEach((c, i) => {
+              const text = (c.headline + ' ' + c.body + ' ' + c.insight).toLowerCase();
+              if (text.includes(q.toLowerCase())) {
+                const cardId = `arch-${d}-${secId}-${i}`;
+                const tc = secId === 'econ' ? '' : secId;
+                window._cardData[cardId] = { ...c, tc };
+                results.push({ cardId, c, tc, date: d });
+              }
+            });
+          }
+        } catch {}
+      }));
+      results.sort((a, b) => b.date.localeCompare(a.date));
+      if (!results.length) {
+        sp.innerHTML = `<div class="search-result-label">"${q}" 검색 결과 없음</div><div class="empty"><p>일치하는 브리핑이 없어요.</p></div>`;
+        return;
+      }
+      const bms = getBookmarks();
+      const cards = results.map(({ cardId, c, tc }) => cardHtml(cardId, c, tc, !!bms[cardId])).join('');
+      sp.innerHTML = `<div class="search-result-label">"${q}" 검색 결과 ${results.length}건</div><div class="grid">${cards}</div>`;
+    } catch {
+      sp.innerHTML = '<div class="empty"><p>검색 중 오류가 발생했어요.</p></div>';
+    }
+  };
 
   updateBmBtn();
 
