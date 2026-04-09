@@ -37,17 +37,20 @@
   .tab.on { color:#FAF8F5; border-bottom-color:var(--gold); font-weight:500; }
 
   .charts-row { background:#000C22; border-bottom:1px solid rgba(201,176,114,0.1); display:none; }
-  .charts-inner { max-width:1080px; margin:0 auto; padding:12px 24px 14px; }
-  .chart-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .charts-inner { max-width:1080px; margin:0 auto; padding:14px 24px 16px; }
+  .chart-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; gap:16px; }
   .chart-tabs { display:flex; gap:5px; }
-  .chart-tab { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; padding:4px 12px; border-radius:20px; border:1px solid rgba(255,255,255,0.12); background:transparent; color:rgba(250,248,245,0.35); cursor:pointer; transition:all 0.18s; }
+  .chart-tab { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; padding:4px 14px; border-radius:20px; border:1px solid rgba(255,255,255,0.12); background:transparent; color:rgba(250,248,245,0.35); cursor:pointer; transition:all 0.18s; }
   .chart-tab.on { background:rgba(255,255,255,0.09); color:#FAF8F5; border-color:rgba(255,255,255,0.28); }
   .chart-tab:hover:not(.on) { color:rgba(250,248,245,0.6); border-color:rgba(255,255,255,0.2); }
-  .chart-val { font-family:'DM Mono',monospace; font-size:15px; color:#FAF8F5; font-weight:500; }
-  .chart-chg { font-family:'DM Mono',monospace; font-size:10px; margin-left:5px; }
-  .chart-chg.up { color:#66BB6A; }
-  .chart-chg.dn { color:#EF5350; }
-  .chart-svg { overflow:hidden; border-radius:2px; }
+  .chart-stat { text-align:right; }
+  .chart-val-big { font-family:'DM Mono',monospace; font-size:22px; color:#FAF8F5; font-weight:500; letter-spacing:-0.01em; display:block; }
+  .chart-chg-big { font-family:'DM Mono',monospace; font-size:11px; margin-top:2px; display:block; }
+  .chart-chg-big.up { color:#66BB6A; }
+  .chart-chg-big.dn { color:#EF5350; }
+  .chart-no-data { height:72px; display:flex; align-items:center; justify-content:center; color:rgba(250,248,245,0.18); font-family:'DM Mono',monospace; font-size:11px; }
+  .chart-wrap { position:relative; }
+  .chart-tooltip { position:absolute; background:rgba(0,8,40,0.92); color:#FAF8F5; font-family:'DM Mono',monospace; font-size:11px; padding:5px 9px; border-radius:5px; pointer-events:none; white-space:nowrap; opacity:0; transition:opacity 0.1s; z-index:10; border:1px solid rgba(201,176,114,0.25); }
 
   .ticker { background:#000C22; padding:8px 24px; font-family:'DM Mono',monospace; font-size:11px; display:flex; gap:32px; overflow-x:auto; }
   .ticker::-webkit-scrollbar { display:none; }
@@ -310,33 +313,84 @@
   }
 
   function renderCharts(mc) {
-    function sparkline(history, color) {
-      if (!history || history.length < 2) return '';
+    const W = 600, H = 72;
+    const DEFS = [{ key:'kospi', label:'KOSPI' }, { key:'nasdaq', label:'NASDAQ' }];
+
+    function buildCoords(history) {
       const prices = history.map(h => h.close);
       const min = Math.min(...prices), max = Math.max(...prices);
       const range = max - min || 1;
-      const W = 600, H = 52;
-      const pts = prices.map((p, i) => {
-        const x = (i / (prices.length - 1)) * W;
-        const y = H - 4 - ((p - min) / range) * (H - 10);
-        return `${x.toFixed(1)},${y.toFixed(1)}`;
-      }).join(' ');
-      return `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="display:block">
-        <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
-      </svg>`;
+      return prices.map((p, i) => ({
+        x: (i / (prices.length - 1)) * W,
+        y: H - 5 - ((p - min) / range) * (H - 12),
+        price: p,
+        date: history[i].date
+      }));
     }
 
     function showChart(key) {
       const d = mc[key];
-      if (!d) return;
+      const valEl = document.getElementById('chart-val-big');
+      const chgEl = document.getElementById('chart-chg-big');
+      const area  = document.getElementById('chart-svg-area');
+      if (!d) {
+        valEl.textContent = '—';
+        chgEl.textContent = 'NO DATA';
+        chgEl.className = 'chart-chg-big';
+        area.innerHTML = '<div class="chart-no-data">데이터 없음</div>';
+        return;
+      }
       const up = d.change_pct >= 0;
       const color = up ? '#66BB6A' : '#EF5350';
       const arrow = up ? '▲' : '▼';
-      document.getElementById('chart-val').textContent = d.current.toLocaleString();
-      const chgEl = document.getElementById('chart-chg');
+      valEl.textContent = d.current.toLocaleString();
       chgEl.textContent = `${arrow}${Math.abs(d.change_pct).toFixed(2)}%`;
-      chgEl.className = `chart-chg ${up ? 'up' : 'dn'}`;
-      document.getElementById('chart-svg-area').innerHTML = sparkline(d.history, color);
+      chgEl.className = `chart-chg-big ${up ? 'up' : 'dn'}`;
+
+      const coords = buildCoords(d.history);
+      const pts = coords.map(c => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ');
+
+      area.innerHTML = `
+        <div class="chart-wrap">
+          <div id="chart-tooltip" class="chart-tooltip"></div>
+          <svg id="chart-svg" width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="display:block;cursor:crosshair">
+            <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            <line id="chart-xhair" x1="0" y1="0" x2="0" y2="${H}" stroke="rgba(250,248,245,0.22)" stroke-width="1" stroke-dasharray="3,2" visibility="hidden"/>
+            <circle id="chart-dot" r="3.5" fill="${color}" stroke="#000C22" stroke-width="1.5" visibility="hidden"/>
+            <rect id="chart-overlay" width="${W}" height="${H}" fill="transparent"/>
+          </svg>
+        </div>`;
+
+      const svg     = document.getElementById('chart-svg');
+      const xhair   = document.getElementById('chart-xhair');
+      const dot     = document.getElementById('chart-dot');
+      const tooltip = document.getElementById('chart-tooltip');
+      const overlay = document.getElementById('chart-overlay');
+
+      overlay.addEventListener('mousemove', function(e) {
+        const rect = svg.getBoundingClientRect();
+        const mx = (e.clientX - rect.left) * (W / rect.width);
+        const n = coords.length;
+        const idx = Math.min(Math.max(Math.round(mx / W * (n - 1)), 0), n - 1);
+        const c = coords[idx];
+        xhair.setAttribute('x1', c.x.toFixed(1)); xhair.setAttribute('x2', c.x.toFixed(1));
+        xhair.setAttribute('visibility', 'visible');
+        dot.setAttribute('cx', c.x.toFixed(1)); dot.setAttribute('cy', c.y.toFixed(1));
+        dot.setAttribute('visibility', 'visible');
+        const [, m, day] = c.date.split('-');
+        tooltip.textContent = `${parseInt(m)}/${parseInt(day)}  ${c.price.toLocaleString()}`;
+        tooltip.style.opacity = '1';
+        const pxLeft = e.clientX - rect.left;
+        const flip = pxLeft > rect.width * 0.65;
+        tooltip.style.left  = flip ? 'auto' : (pxLeft + 12) + 'px';
+        tooltip.style.right = flip ? (rect.width - pxLeft + 12) + 'px' : 'auto';
+        tooltip.style.top = Math.max(2, e.clientY - rect.top - 32) + 'px';
+      });
+      overlay.addEventListener('mouseleave', function() {
+        xhair.setAttribute('visibility', 'hidden');
+        dot.setAttribute('visibility', 'hidden');
+        tooltip.style.opacity = '0';
+      });
     }
 
     window.switchChart = function(key, btn) {
@@ -345,23 +399,24 @@
       showChart(key);
     };
 
-    const available = [{ key:'kospi', label:'KOSPI' }, { key:'nasdaq', label:'NASDAQ' }].filter(d => mc[d.key]);
-    if (!available.length) return;
-
-    const tabs = available.map(({ key, label }, i) =>
+    // 항상 두 탭 모두 표시
+    const tabs = DEFS.map(({ key, label }, i) =>
       `<button class="chart-tab${i===0?' on':''}" onclick="switchChart('${key}',this)">${label}</button>`
     ).join('');
 
     const row = document.getElementById('charts-row');
     row.innerHTML = `<div class="charts-inner">
-      <div class="chart-header">
+      <div class="chart-top">
         <div class="chart-tabs">${tabs}</div>
-        <div><span id="chart-val"></span><span id="chart-chg" class="chart-chg"></span></div>
+        <div class="chart-stat">
+          <span id="chart-val-big" class="chart-val-big"></span>
+          <span id="chart-chg-big" class="chart-chg-big"></span>
+        </div>
       </div>
-      <div id="chart-svg-area" class="chart-svg"></div>
+      <div id="chart-svg-area"></div>
     </div>`;
     row.style.display = 'block';
-    showChart(available[0].key);
+    showChart(DEFS[0].key);
   }
 
   async function loadBriefing() {
