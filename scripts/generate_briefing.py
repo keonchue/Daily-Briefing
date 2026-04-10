@@ -13,17 +13,19 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; DailyBriefingBot/1.0)"}
 
 RSS_FEEDS = {
     "econ": [
-        {"name": "매일경제", "url": "https://www.mk.co.kr/rss/40300001/"},
-        {"name": "한국경제", "url": "https://www.hankyung.com/feed/economy"},
+        {"name": "네이버 많이 본 경제", "url": "https://rss.naver.com/main/popularMoney.xml", "limit": 6},
     ],
     "politics": [
-        {"name": "연합뉴스", "url": "https://www.yna.co.kr/rss/politics.xml"},
-        {"name": "KBS뉴스", "url": "https://news.kbs.co.kr/rss/rss.do?cid=1"},
+        {"name": "네이버 많이 본 정치", "url": "https://rss.naver.com/main/popularPolitics.xml", "limit": 6},
     ],
     "consumer": [
         {"name": "소비자평가", "url": "https://www.iconsumer.or.kr/rss/allArticle.xml"},
         {"name": "마케팅조선", "url": "https://marketing.chosun.com/rss/allArticle.xml"},
         {"name": "한국소비자원", "url": "https://www.kca.go.kr/rss/news.xml"},
+        {"name": "매일경제 소비", "url": "https://www.mk.co.kr/rss/50200011/"},
+        {"name": "한국경제 소비자", "url": "https://www.hankyung.com/feed/consumer"},
+        {"name": "연합뉴스 경제", "url": "https://www.yna.co.kr/rss/economy.xml"},
+        {"name": "머니투데이", "url": "https://rss.mt.co.kr/mt_news/sec_list.xml?code=0020"},
     ],
 }
 
@@ -54,9 +56,66 @@ def parse_rss(feed_url, source_name, limit=4):
 def fetch_section_news(section):
     news = []
     for feed in RSS_FEEDS[section]:
-        news.extend(parse_rss(feed["url"], feed["name"]))
+        limit = feed.get("limit", 4)
+        news.extend(parse_rss(feed["url"], feed["name"], limit=limit))
         time.sleep(0.5)
     return news[:6]
+
+
+def score_consumer_articles(articles):
+    """소비자학 관련도 1~10점 평가, 7점 이상만 반환"""
+    if not articles:
+        return []
+
+    articles_text = "\n".join(
+        [f"A{i}: [{a['source']}] {a['title']}" for i, a in enumerate(articles)]
+    )
+
+    prompt = f"""다음 기사들의 소비자학 관련도를 1~10점으로 평가하세요.
+
+평가 기준:
+- 소비자 행동: 구매 결정, 소비 패턴, 브랜드 선택, 소비자 심리 등
+- 마케팅 전략: 가격 정책, 유통 전략, 광고·홍보, 제품 전략 등
+- 소비 트렌드: 새로운 소비 문화, 라이프스타일 변화, MZ세대 소비 등
+- 소비자 정책: 소비자 보호법, 규제, 소비자 권리·피해 구제 등
+- 시장 구조: 경쟁 환경, 독과점, 유통채널 변화, 플랫폼 경제 등
+
+기사 목록:
+{articles_text}
+
+반드시 아래 형식으로만 응답. JSON만 출력:
+{{"scores":[{{"id":"A0","score":8}},{{"id":"A1","score":5}}]}}
+
+규칙: 모든 기사에 점수 부여. 문자열 안에 큰따옴표 금지."""
+
+    response = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=800,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    result = parse_json_safe(response.content[0].text)
+    passing_ids = {
+        item["id"] for item in result.get("scores", [])
+        if item.get("score", 0) >= 7
+    }
+    filtered = [
+        articles[int(aid[1:])]
+        for aid in sorted(passing_ids)
+        if aid.startswith("A") and aid[1:].isdigit() and int(aid[1:]) < len(articles)
+    ]
+    print(f"     v 소비자학 관련도 평가: {len(articles)}건 → {len(filtered)}건 (7점 이상)")
+    return filtered
+
+
+def fetch_consumer_news():
+    """소비자 섹션: 전체 수집 후 소비자학 관련도 필터링"""
+    news = []
+    for feed in RSS_FEEDS["consumer"]:
+        limit = feed.get("limit", 4)
+        news.extend(parse_rss(feed["url"], feed["name"], limit=limit))
+        time.sleep(0.5)
+    print(f"     -> 소비자학 관련도 평가 중... ({len(news)}건)")
+    return score_consumer_articles(news)
 
 
 def fetch_bok_indicators():
@@ -211,17 +270,19 @@ def main():
     print("  -> 정치·사회 뉴스 수집 중...")
     politics_news = fetch_section_news("politics")
     time.sleep(1)
-    print("  -> 소비자 뉴스 수집 중...")
-    consumer_news = fetch_section_news("consumer")
+    print("  -> 소비자 뉴스 수집 및 관련도 평가 중...")
+    consumer_news = fetch_consumer_news()
 
     sections = {}
 
     econ_context = f"경제지표: 기준금리 {bok['rate']}, 원달러환율 {bok['exchange']}원, KOSPI {bok['kospi']}\n첫번째 카드 body에 반드시 KOSPI와 환율 수치를 포함하세요."
 
+    consumer_context = "소비자학 관련도 7점 이상으로 선정된 기사입니다. 소비자 행동, 마케팅 전략, 소비 트렌드, 소비자 정책 관점에서 분석하세요.\n"
+
     for key, news, ctx in [
         ("econ", econ_news, econ_context),
         ("politics", politics_news, ""),
-        ("consumer", consumer_news, ""),
+        ("consumer", consumer_news, consumer_context),
     ]:
         print(f"  -> {key} Claude 분석 중...")
         try:
