@@ -3,8 +3,8 @@
   "date_kr": "2026년 04월 10일",
   "market_charts": {
     "kospi": {
-      "current": 5896.68,
-      "change_pct": 2.05,
+      "current": 5894.78,
+      "change_pct": 2.02,
       "history": [
         {
           "date": "2026-02-27",
@@ -124,7 +124,7 @@
         },
         {
           "date": "2026-04-10",
-          "close": 5896.68
+          "close": 5894.78
         }
       ]
     },
@@ -257,41 +257,33 @@
   },
   "sections": {
     "econ": {
-      "summary": "한은의 7연속 기준금리 동결로 2.50%를 유지하는 가운데, 중동 리스크로 환율이 1,477원까지 상승하고 주가가 변동성을 보이고 있습니다. 고물가 속에서 소비심리가 위축되자 유통업계가 PB 상품과 할인 전략으로 소비자 부담 완화에 나서고 있습니다.",
+      "summary": "한은이 기준금리를 2.50%에서 7연속 동결하며 연내 인상 가능성을 낮추고 있으며, 원달러환율 1,477원과 KOSPI 5,894.78(▲2.02%)으로 시장이 혼조세를 보이고 있습니다. 고물가 속 소비심리 위축으로 유통업계가 PB상품과 할인 프로모션으로 대응하는 중입니다.",
       "cards": [
         {
-          "tag": "금융시장",
-          "headline": "한은 기준금리 7연속 동결, KOSPI 5,896.91으로 상승",
-          "body": "한국은행이 기준금리를 2.50%로 7연속 동결했습니다. 이 가운데 원달러환율은 1,477원으로 상승세를 이어가고 있으며, KOSPI는 2.06% 상승한 5,896.91을 기록했습니다. 중동 지정학적 리스크가 시장에 영향을 미치고 있는 상황입니다.",
-          "insight": "소비자들은 금리 동결로 인한 대출 이자 부담 완화를 기대하면서도 환율 상승으로 인한 수입 물가 인상 우려에 주목해야 합니다. 주가 변동성은 자산 가치와 소비심리에 직결되므로 시장 추이 모니터링이 필요합니다.",
+          "tag": "금리정책",
+          "headline": "한은 기준금리 7연속 동결, KOSPI 5,894.78·환율 1,477원",
+          "body": "한국은행이 기준금리를 2.50%에서 동결하며 시장 안정성을 유지하고 있습니다. 현재 KOSPI는 5,894.78으로 전일 대비 2.02% 상승했으며, 원달러환율은 1,477원 수준입니다. 신현송 총재의 중립적 기조로 연내 추가 인상은 없을 것으로 전망됩니다.",
+          "insight": "금리 동결과 안정적인 환율 관리는 소비자의 대출 부담을 유지하고 장기적 구매력 보호에 기여합니다.",
           "sources": [
             {
               "title": "구글뉴스 경제①",
               "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE85eHlFMjNzSEExVmFPeU5RUGEyZlJKRkJPSnZRZXJzVERKbXlVc1FMTkFnc0FrZlVRdWhZdXZrU01DTkxPLW1uQjN0Z255SG1KY0kzWWM2R2xDd9IBVEFVX3lxTE1PaE1wMVZvVlA3N1B3OEN4RGMzYVN3RVgxODJrd3M0bmVTUkViVGRoSDdNMVcxcGZIZVlENG5rNEtLNm94ODNETGJLMjNUZ3N6MUhyaw?oc=5"
-            }
-          ]
-        },
-        {
-          "tag": "환율·금리",
-          "headline": "환율 1,500원 코앞, 경제 비상 신호",
-          "body": "원달러환율이 1,477원에 근접하면서 채권금리도 상승세를 보이고 있습니다. 중동발 공포가 확산되면서 환율과 금리가 동시에 치솟고 있어 한국 경제의 어려움이 가중되고 있습니다.",
-          "insight": "소비자 입장에서 환율 상승은 수입 식품, 의류, 전자제품 등의 가격 인상으로 이어져 생활비 부담을 증가시킵니다. 특히 고정 수입층의 구매력 약화로 소비 심리가 더욱 위축될 수 있습니다.",
-          "sources": [
-            {
-              "title": "구글뉴스 경제①",
-              "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTFBJMzFYTVFjWGYyN1haaDF6cXo3dmk0NnA1bHJnWlZuX3JBSE1Ec0tvZXR2amFGTTczSElGcUpHb0cySGlRcGxzbXpxNEw2bFV0emZnQXhFUm1MeFE5ZUVVcE9qdzVSWUt6V3VESkZB?oc=5"
             },
             {
               "title": "구글뉴스 경제①",
-              "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE14U25DZWRlU2NFU09LWHA2ejdqZ2FzRjFkN3pwR0dIMXZ3LTJ3emdmbGlFTzliUnVJSWZGZlctbGtPTk43N3dlQ2pKbkpTUGVqMWFpclp3?oc=5"
+              "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTFBCcUk3SXFEV0V0X3VSTEtJRGFYcTBseEFZZ29xajZJaDVhWFFJby1xVTRoVHZVWURIVjNDYUZtSVA3RVdPZVRaLV96TFEtRTIzcFk5QmxFUHgzZ9IBVEFVX3lxTE52LUZ4M3luX09hLWFSOHViNGZGTV9uMlNMZEhBUUtZZmJrTG9UT3lLMXlvQWgzWld1YnJ1S0NPR1JxVXV0bDdmM1o4RmRMOHRtZGdCRQ?oc=5"
+            },
+            {
+              "title": "구글뉴스 경제①",
+              "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTFBfakUxUmI5QWtTYzZLM1dwYmlsMktxMXNMNVgzSTJFdk16LXUtTy04VnZJbVVnYkxUMjR2cDh4cXVlZUlxMWNKYlk0aUVoSC11dUFlUnJibU5BZ9IBVEFVX3lxTFBIQjBZV2pjZFVUbUtUNVlQaFlJNzZTRDFqajVhYTdEUWZDU1k0aGxUSUVuNVFKa2ZDd3NXNzZpNV83ZDlLdll6TDVFaTBwQVl0TTc1Yg?oc=5"
             }
           ]
         },
         {
-          "tag": "소비·유통",
-          "headline": "고물가에 위축된 소비, 유통업계 PB·할인 전략 확대",
-          "body": "고물가로 얼어붙은 소비심리에 대응해 유통업계가 자체 브랜드(PB) 상품과 할인 행사를 총동원하고 있습니다. 농협유통도 한우 최대 할인 행사로 소비자 부담을 완화하려는 움직임을 보이고 있습니다.",
-          "insight": "소비자 관점에서 PB 상품과 할인 정책은 구매력 보호 수단이 되지만, 이는 소비 구조 변화의 신호입니다. 프리미엄 상품 수요 감소와 가성비 중심 쇼핑 행태 확산은 향후 유통·마케팅 전략 재편을 의미합니다.",
+          "tag": "소비심리",
+          "headline": "고물가에 위축된 소비, 유통업계 PB·할인으로 돌파",
+          "body": "물가 상승으로 소비심리가 얼어붙은 상황에서 유통업계는 자체브랜드(PB)상품 확대와 할인 프로모션을 총동원하고 있습니다. 특히 농협유통이 한우 최대 할인 행사를 전개해 필수 식품의 가계 부담을 완화하려는 움직임을 보입니다.",
+          "insight": "소비자는 저가 PB상품과 프로모션을 통해 구매력을 확보하고 있으며, 유통업체들의 판촉전략이 가계 효용성 극대화에 영향을 미칩니다.",
           "sources": [
             {
               "title": "구글뉴스 경제②",
@@ -302,17 +294,29 @@
               "url": "https://news.google.com/rss/articles/CBMic0FVX3lxTE80emhDNTBHZlNkMEM2Q2RNSUQtMFFDTzViWVJZdjJBS0lhbXVvSkVRd0c5TVBqQmxNbUlkbzd0aU80QUdNS2ItbjhTbG1LRExnbVNGaHB5Q1REaHNzeDRrMXpNRGJjcXYyVkdWdmVza0dzQjjSAXdBVV95cUxOMVRVS0VGM0NSdDFqNEFVYVprcklfdzYxYlpVYnczZkZKM3d3dnBRTHViNWI1SHBJZmZ2QzJlM1FRRUpYTHVlYUtwY3hMdDhubUYzeld4enAzeHBFRFVZS2Fxb2l6MzJUNlR4czV6WnZNVFBmU3VrYw?oc=5"
             }
           ]
+        },
+        {
+          "tag": "경제전망",
+          "headline": "중동발 불안감 속 환율·금리 변동성 확대",
+          "body": "중동 발 공포감이 전 지구적으로 확산되면서 환율과 금리, 주가의 변동성이 커지고 있습니다. 한국경제도 외부 충격에 민감하게 반응하며 소비와 투자 심리에 부정적 영향을 미치는 상황입니다.",
+          "insight": "소비자는 환율 변동에 따른 수입품 가격 상승과 금융시장 불안정성으로 인한 자산 감소에 대비해 신중한 소비 의사결정이 필요합니다.",
+          "sources": [
+            {
+              "title": "구글뉴스 경제①",
+              "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTFBJMzFYTVFjWGYyN1haaDF6cXo3dmk0NnA1bHJnWlZuX3JBSE1Ec0tvZXR2amFGTTczSElGcUpHb0cySGlRcGxzbXpxNEw2bFV0emZnQXhFUm1MeFE5ZUVVcE9qdzVSWUt6V3VESkZB?oc=5"
+            }
+          ]
         }
       ]
     },
     "politics": {
-      "summary": "2026년 4월 기준 한국 정치는 양극화 심화와 사회 갈등이 심각한 상황이며, 국민연금과 복지정책 연계를 통한 사회보장체계 개선이 추진되고 있다.",
+      "summary": "2026년 4월 기준 한국 정치는 양극화가 심화되고 있으며, 정부 정책은 연금과 복지 분야에서 제도 개선을 추진하고 있다. 소비자들은 정치 뉴스와 정책 변화에 주목하면서 일상생활에 미치는 영향을 관심 있게 지켜보고 있다.",
       "cards": [
         {
-          "tag": "정치양극화",
-          "headline": "계엄 그후 1년, 쪼개진 한국...정치 양극화 더 커졌다 77%",
-          "body": "지난 1년간 한국의 정치 양극화가 심화되었으며 국민 77%가 양극화 심화를 체감하고 있는 상황이다.",
-          "insight": "소비자들의 정치적 신뢰도 저하는 공공서비스 및 정책 상품에 대한 구매의사 결정에 영향을 미치며, 양극화된 소비 패턴 분화로 시장 세분화가 심화된다.",
+          "tag": "정치사회",
+          "headline": "계엄 1년, 정치 양극화 심화...국민 77%가 분열 심각 인식",
+          "body": "지난해 계엄 사태 이후 한국 정치의 양극화가 더욱 심해졌다는 여론이 지배적이다. 국민 대다수가 정치 진영 간 갈등이 심각하다고 느끼고 있으며, 이는 정치 신뢰도 하락으로 이어지고 있다.",
+          "insight": "소비자들의 정치 불신은 구매 의사결정과 브랜드 신뢰도에 영향을 미칠 수 있다. 기업들은 정치 중립성을 강화하고 사회적 책임을 통해 소비자 신뢰를 회복해야 한다.",
           "sources": [
             {
               "title": "구글뉴스 정치①",
@@ -321,34 +325,75 @@
           ]
         },
         {
-          "tag": "사회극단화",
-          "headline": "대한민국의 정치와 사회는 왜 이렇게 극단적일까?",
-          "body": "한국 사회의 정치와 사회 현상이 극단적으로 변화하고 있으며 이에 대한 원인과 해결 방안을 모색해야 하는 상황이다.",
-          "insight": "극단적 사회 분위기는 소비자의 감정 기반 구매 결정을 증가시키고, 가치관 기반 소비와 MZ세대의 신념소비 확대로 이어져 브랜드 선택의 정치화 현상을 초래한다.",
+          "tag": "미디어정보",
+          "headline": "정치 유튜브와 한국 정치의 현실...디지털 플랫폼의 영향력 확대",
+          "body": "유튜브 등 디지털 플랫폼이 정치 정보 유통의 주요 채널로 부상하면서 여론 형성에 미치는 영향이 커지고 있다. 온라인 정치 콘텐츠의 확산이 기존 미디어와 다른 양상의 정치 담론을 형성하고 있다.",
+          "insight": "소비자들의 정보 습득 경로가 다양화되면서 마케팅 전략도 멀티채널 접근이 필수가 되었다. 기업은 유튜브 등 플랫폼에서의 신뢰성 있는 콘텐츠 제공으로 소비자 관계를 강화할 수 있다.",
           "sources": [
             {
               "title": "구글뉴스 정치①",
-              "url": "https://news.google.com/rss/articles/CBMia0FVX3lxTE1xSmtuYTJRaEQ2VEhyU1VpNFI1VVdXLUxONmUySDJvMzFuZzh2R0JwRkNoOUNlSGhrWkxRb2NoV3ZNMzgycWdvZUNxc0JZOVBseFdiZ1hOUDh4cmZETW1CTDVWLXlPQ3NoQ1hF0gFvQVVfeXFMT1FfWkN0ZVdkV0E5emFtZHMtUU1GUVFWNVhMN1RiSW9BSWFIVmc0M21FejZVdUphWlJ2VzIydFRSRHR2REE2YTJPdXFkZ0ZfUHBnNXBhZldjaTBVNnJoVDZ5eUZBQ09ZT0JyNEY5eENr?oc=5"
+              "url": "https://news.google.com/rss/articles/CBMickFVX3lxTE80ejA2NWtuQVhSWWhMVkFzRmlJXy1ySXF1Y2s0Q0J4OW9aWV9IcG9jbzZlMXlLelpyb1JRUTlQekRraG1QUkR3a25zZXdPU2hWRi1LdEFiUnR2aC1tWDZaYTBnNFRxYzFLME5sTC1TZktVQQ?oc=5"
             }
           ]
         },
         {
           "tag": "복지정책",
-          "headline": "국민연금공단·한국사회보장정보원, 연금과 복지정책 발전 위한 업무협약 체결",
-          "body": "국민연금공단과 한국사회보장정보원이 연금과 복지정책의 통합 발전을 위해 업무협약을 체결하였다.",
-          "insight": "사회보장정책의 통합화는 소비자의 노후 금융 안정성 인식 개선으로 이어지며, 연금-복지 연계 서비스는 고령 소비자의 구매력 유지와 라이프플래닝 기반 소비 패턴 변화를 유도한다.",
+          "headline": "국민연금과 복지정책 발전을 위한 정부 기관 간 업무협약 체결",
+          "body": "국민연금공단과 한국사회보장정보원이 연금 및 복지정책의 효율적 추진을 위해 업무협약을 체결했다. 정부가 사회보장 체계 개선에 나서면서 국민의 삶의 질 향상을 추진하고 있다.",
+          "insight": "연금과 복지 정책의 개선은 소비자의 미래 자산 계획과 소비 패턴에 직접적인 영향을 미친다. 소비자들은 정책 변화에 따른 생활비 변동을 예측하고 합리적인 소비 결정을 내려야 한다.",
           "sources": [
             {
               "title": "구글뉴스 정치②",
               "url": "https://news.google.com/rss/articles/CBMia0FVX3lxTE1fWlZXZmJ4OGlIdjVOS1JpcDJGSWdsYkNBWGV6LVZzc1R1V040MlFUaXFhVDdXSUtFNkxJNWJZOWgzVjQxR3pXQWpXMGJ4dmp4b3c2T1M3elJ4VEdVZUlGMll2Zl9vRnM4TkFJ?oc=5"
+            },
+            {
+              "title": "구글뉴스 정치②",
+              "url": "https://news.google.com/rss/articles/CBMibEFVX3lxTE1VOWc2Z0g3TWd0YVNaMUdHbkpqQVNGb0hpZXFldEdndTg3QlM4T3VnVm91SC1mdTFOdm1TdjBtYkowN3kzRDNaZUlMUGtvbktKTVRnSUtnd1B1YzdBd3hYaDZaLXNVUW85REdhOdIBcEFVX3lxTE1lVU9YMzEyazIxc1A5MkY3anFubjBJaEpzZ1ZGV21DN2VfaTdGRnA1cUQ2SVFaUFhjcE5JOGI1YnVBdkR1VjIyS2oyVW1EaUM3ektGdXRVQldTSmFhTml4eGdnT3NTcTRkbTlIdXc5OXk?oc=5"
             }
           ]
         }
       ]
     },
     "consumer": {
-      "summary": "오류 발생",
-      "cards": []
+      "summary": "2026년 4월 현재 소비자들은 과시적 소비에서 벗어나 숨은 가치를 추구하는 '조용한 럭셔리' 트렌드를 보이고 있습니다. 동시에 SNS 기반 초단기 트렌드, 한정판 굿즈, 팝업 스토어 등 FOMO 마케팅과 경험 중심의 소비 행동이 강화되고 있습니다.",
+      "cards": [
+        {
+          "tag": "마케팅 전략",
+          "headline": "로고는 촌스럽다…럭셔리는 왜 점점 조용해지는가",
+          "body": "명품 브랜드들이 과도한 로고 노출을 줄이고 절제된 디자인으로 전환하는 현상이 확산되고 있습니다. 소비자들은 브랜드 가시성보다 내재된 가치와 품질을 중시하며, 이러한 변화는 성숙한 소비자의 미적 기준 상향을 반영합니다.",
+          "insight": "과시적 소비에서 가치 기반 소비로의 패러다임 전환을 보여주는 사례입니다. 고소득층 소비자의 심리 변화와 사회적 인식 변화에 따른 마케팅 재전략의 필요성을 시사하며, 진정성과 미니멀리즘이 프리미엄 포지셔닝의 새로운 기준이 되고 있음을 의미합니다.",
+          "sources": [
+            {
+              "title": "한국경제 생활",
+              "url": "https://www.hankyung.com/article/202604012337i"
+            }
+          ]
+        },
+        {
+          "tag": "소비 트렌드",
+          "headline": "SNS는 어떻게 유행을 만들고, 초단기 식품 트렌드를 증폭시키는가",
+          "body": "소셜 미디어 플랫폼이 식품 트렌드의 확산 속도를 급격히 가속화하면서 초단기 열풍 현상을 야기하고 있습니다. 바이럴 효과로 인한 공급 부족, FOMO 심리 자극, 제품 라이프사이클의 급속한 단축이 특징입니다.",
+          "insight": "디지털 네이티브 소비자의 정보 습득 방식 변화와 집단 심리가 소비 행동에 미치는 영향을 분석합니다. SNS 기반 마이크로 트렌드의 빈번한 발생으로 소비자의 의사결정 속도가 빨라지고 있으며, 기업들은 신속한 상품 개발과 마케팅 민첩성이 생존 조건이 되었음을 보여줍니다.",
+          "sources": [
+            {
+              "title": "소비자평가",
+              "url": "https://www.iconsumer.or.kr/news/articleView.html?idxno=30414"
+            }
+          ]
+        },
+        {
+          "tag": "마케팅 전략",
+          "headline": "스타벅스, 시즌 한정 굿즈 전략으로 시간을 설계하다",
+          "body": "프리미엄 브랜드가 한정판 굿즈와 시즌 기반 마케팅으로 소비자의 구매 시점을 의도적으로 조정하는 전략을 전개하고 있습니다. 희소성 원리와 시간적 압박감을 활용하여 충동 구매를 유도하고 브랜드 팬덤을 강화합니다.",
+          "insight": "스케어시티 마케팅과 경험 경제 이론이 결합된 사례로, 소비자의 심리적 욕구(소속감, 우월감, 수집욕)를 정교하게 자극하는 전술입니다. 한정성을 통한 가치 창출과 반복 구매 유도 메커니즘은 현대 소비자 행동의 핵심 특성을 활용한 효과적인 전략으로 평가됩니다.",
+          "sources": [
+            {
+              "title": "소비자평가",
+              "url": "https://www.iconsumer.or.kr/news/articleView.html?idxno=30408"
+            }
+          ]
+        }
+      ]
     }
   }
 }
