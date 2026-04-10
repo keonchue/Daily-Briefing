@@ -1,5 +1,6 @@
 import anthropic, json, os, time, re
 import urllib.request
+from urllib.parse import urlsplit, urlunsplit, quote
 from datetime import datetime, timezone, timedelta
 from xml.etree import ElementTree as ET
 
@@ -34,7 +35,14 @@ RSS_FEEDS = {
 
 def parse_rss(feed_url, source_name, limit=4):
     try:
-        req = urllib.request.Request(feed_url, headers=HEADERS)
+        parts = urlsplit(feed_url)
+        encoded_url = urlunsplit((
+            parts.scheme, parts.netloc,
+            quote(parts.path, safe="/:@"),
+            quote(parts.query, safe="=&+:"),
+            parts.fragment,
+        ))
+        req = urllib.request.Request(encoded_url, headers=HEADERS)
         with urllib.request.urlopen(req, timeout=10) as res:
             content = res.read()
         root = ET.fromstring(content)
