@@ -26,9 +26,10 @@ RSS_FEEDS = {
         {"name": "마케팅조선", "url": "https://marketing.chosun.com/rss/allArticle.xml"},
         {"name": "한국소비자원", "url": "https://www.kca.go.kr/rss/news.xml"},
         {"name": "매일경제 소비", "url": "https://www.mk.co.kr/rss/50200011/"},
-        {"name": "한국경제 소비자", "url": "https://www.hankyung.com/feed/consumer"},
+        {"name": "한국경제 생활", "url": "https://www.hankyung.com/feed/life"},
         {"name": "연합뉴스 경제", "url": "https://www.yna.co.kr/rss/economy.xml"},
-        {"name": "머니투데이", "url": "https://rss.mt.co.kr/mt_news/sec_list.xml?code=0020"},
+        {"name": "이데일리 경제", "url": "https://rss.edaily.co.kr/economy_news.xml"},
+        {"name": "아주경제 속보", "url": "https://rss.ajunews.com/sokbo.xml"},
     ],
 }
 
