@@ -246,7 +246,7 @@ def call_claude_section(section_name, news_list, extra_context=""):
 
     response = client.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=1200,
+        max_tokens=2000,
         messages=[{"role": "user", "content": prompt}]
     )
     result = parse_json_safe(response.content[0].text)
