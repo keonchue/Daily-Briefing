@@ -1,76 +1,67 @@
 import anthropic, json, os, time, re
 import urllib.request
-from urllib.parse import urlsplit, urlunsplit, quote
+from urllib.parse import urlencode, urlsplit
 from datetime import datetime, timezone, timedelta
-from xml.etree import ElementTree as ET
 
 KST = timezone(timedelta(hours=9))
 today = datetime.now(KST).strftime("%Y년 %m월 %d일")
 today_iso = datetime.now(KST).strftime("%Y-%m-%d")
 
 client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-AV_KEY = os.environ.get("ALPHA_VANTAGE_API_KEY", "")
+NAVER_CLIENT_ID = os.environ.get("NAVER_CLIENT_ID", "")
+NAVER_CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET", "")
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; DailyBriefingBot/1.0)"}
 
-RSS_FEEDS = {
-    "econ": [
-        {"name": "구글뉴스 경제①", "url": "https://news.google.com/rss/search?q=한국경제+금리+환율&hl=ko&gl=KR&ceid=KR:ko"},
-        {"name": "구글뉴스 경제②", "url": "https://news.google.com/rss/search?q=소비+물가+유통&hl=ko&gl=KR&ceid=KR:ko"},
-    ],
-    "politics": [
-        {"name": "구글뉴스 정치①", "url": "https://news.google.com/rss/search?q=한국정치+사회이슈&hl=ko&gl=KR&ceid=KR:ko"},
-        {"name": "구글뉴스 정치②", "url": "https://news.google.com/rss/search?q=한국사회+정책&hl=ko&gl=KR&ceid=KR:ko"},
-    ],
-    "consumer": [
-        {"name": "소비자평가", "url": "https://www.iconsumer.or.kr/rss/allArticle.xml"},
-        {"name": "마케팅조선", "url": "https://marketing.chosun.com/rss/allArticle.xml"},
-        {"name": "한국소비자원", "url": "https://www.kca.go.kr/rss/news.xml"},
-        {"name": "매일경제 소비", "url": "https://www.mk.co.kr/rss/50200011/"},
-        {"name": "한국경제 생활", "url": "https://www.hankyung.com/feed/life"},
-        {"name": "연합뉴스 경제", "url": "https://www.yna.co.kr/rss/economy.xml"},
-        {"name": "이데일리 경제", "url": "https://rss.edaily.co.kr/economy_news.xml"},
-        {"name": "아주경제 속보", "url": "https://rss.ajunews.com/sokbo.xml"},
-    ],
+NAVER_KEYWORDS = {
+    "econ": ["한국경제 금리", "소비 물가 유통", "환율 주식"],
+    "politics": ["한국 정치 사회", "정부 정책 국민", "국제 정세 외교", "미국 중국 한국 경제"],
+    "consumer": ["소비자 트렌드", "소비자 피해 보호", "마케팅 브랜드 전략", "소비 행동 심리"],
 }
 
 
-def parse_rss(feed_url, source_name, limit=4):
+def fetch_naver_news(query, display=10):
+    """네이버 뉴스 검색 API로 최신순 기사 수집"""
     try:
-        parts = urlsplit(feed_url)
-        encoded_url = urlunsplit((
-            parts.scheme, parts.netloc,
-            quote(parts.path, safe="/:@"),
-            quote(parts.query, safe="=&+:"),
-            parts.fragment,
-        ))
-        req = urllib.request.Request(encoded_url, headers=HEADERS)
+        params = urlencode({"query": query, "display": display, "sort": "date"})
+        url = f"https://openapi.naver.com/v1/search/news.json?{params}"
+        req = urllib.request.Request(url, headers={
+            "X-Naver-Client-Id": NAVER_CLIENT_ID,
+            "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
+        })
         with urllib.request.urlopen(req, timeout=10) as res:
-            content = res.read()
-        root = ET.fromstring(content)
+            data = json.loads(res.read())
         items = []
-        entries = root.findall(".//item") or root.findall(".//{http://www.w3.org/2005/Atom}entry")
-        for entry in entries[:limit]:
-            title = (entry.findtext("title") or entry.findtext("{http://www.w3.org/2005/Atom}title") or "")
-            link = (entry.findtext("link") or (entry.find("{http://www.w3.org/2005/Atom}link") or entry).get("href", "") or "")
-            desc = (entry.findtext("description") or entry.findtext("{http://www.w3.org/2005/Atom}summary") or "")
-            title = re.sub(r'<[^>]+>|\[CDATA\[|\]\]', '', title).strip()
-            desc = re.sub(r'<[^>]+>|\[CDATA\[|\]\]', '', desc).strip()[:150]
+        for item in data.get("items", []):
+            title = re.sub(r'<[^>]+>|&[a-z]+;|&#\d+;', '', item.get("title", "")).strip()
+            desc = re.sub(r'<[^>]+>|&[a-z]+;|&#\d+;', '', item.get("description", "")).strip()[:150]
+            link = item.get("link") or item.get("originallink", "")
+            original = item.get("originallink") or link
+            try:
+                netloc = urlsplit(original).netloc
+                source_name = re.sub(r'^(www\.|m\.)', '', netloc)
+            except Exception:
+                source_name = query
             if title:
-                items.append({"title": title, "url": link.strip(), "desc": desc, "source": source_name})
-        print(f"     v {source_name}: {len(items)}건")
+                items.append({"title": title, "url": link, "desc": desc, "source": source_name})
+        print(f"     v [{query}]: {len(items)}건")
         return items
     except Exception as e:
-        print(f"     x {source_name} 실패: {e}")
+        print(f"     x [{query}] 실패: {e}")
         return []
 
 
-def fetch_section_news(section):
+def fetch_section_naver(section, limit=6):
+    """키워드별 수집 후 URL 기준 중복 제거, 상위 limit건 반환"""
+    seen = set()
     news = []
-    for feed in RSS_FEEDS[section]:
-        limit = feed.get("limit", 4)
-        news.extend(parse_rss(feed["url"], feed["name"], limit=limit))
-        time.sleep(0.5)
-    return news[:6]
+    for kw in NAVER_KEYWORDS[section]:
+        for item in fetch_naver_news(kw, display=10):
+            key = item["url"] or item["title"]
+            if key not in seen:
+                seen.add(key)
+                news.append(item)
+        time.sleep(0.3)
+    return news[:limit]
 
 
 def score_consumer_articles(articles):
@@ -118,13 +109,17 @@ def score_consumer_articles(articles):
     return filtered
 
 
-def fetch_consumer_news():
-    """소비자 섹션: 전체 수집 후 소비자학 관련도 필터링"""
+def fetch_consumer_naver():
+    """소비자 섹션: 키워드별 수집 → 중복 제거 → 소비자학 관련도 필터링"""
+    seen = set()
     news = []
-    for feed in RSS_FEEDS["consumer"]:
-        limit = feed.get("limit", 4)
-        news.extend(parse_rss(feed["url"], feed["name"], limit=limit))
-        time.sleep(0.5)
+    for kw in NAVER_KEYWORDS["consumer"]:
+        for item in fetch_naver_news(kw, display=10):
+            key = item["url"] or item["title"]
+            if key not in seen:
+                seen.add(key)
+                news.append(item)
+        time.sleep(0.3)
     print(f"     -> 소비자학 관련도 평가 중... ({len(news)}건)")
     return score_consumer_articles(news)
 
@@ -276,18 +271,17 @@ def main():
         market_charts["nasdaq"] = nasdaq_hist
 
     print("  -> 경제 뉴스 수집 중...")
-    econ_news = fetch_section_news("econ")
+    econ_news = fetch_section_naver("econ")
     time.sleep(1)
     print("  -> 정치·사회 뉴스 수집 중...")
-    politics_news = fetch_section_news("politics")
+    politics_news = fetch_section_naver("politics")
     time.sleep(1)
     print("  -> 소비자 뉴스 수집 및 관련도 평가 중...")
-    consumer_news = fetch_consumer_news()
+    consumer_news = fetch_consumer_naver()
 
     sections = {}
 
     econ_context = f"경제지표: 기준금리 {bok['rate']}, 원달러환율 {bok['exchange']}원, KOSPI {bok['kospi']}\n첫번째 카드 body에 반드시 KOSPI와 환율 수치를 포함하세요."
-
     consumer_context = "소비자학 관련도 7점 이상으로 선정된 기사입니다. 소비자 행동, 마케팅 전략, 소비 트렌드, 소비자 정책 관점에서 분석하세요.\n"
 
     for key, news, ctx in [
