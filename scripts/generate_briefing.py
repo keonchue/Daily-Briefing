@@ -13,10 +13,12 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; DailyBriefingBot/1.0)"}
 
 RSS_FEEDS = {
     "econ": [
-        {"name": "네이버 많이 본 경제", "url": "https://rss.naver.com/main/popularMoney.xml", "limit": 6},
+        {"name": "구글뉴스 경제①", "url": "https://news.google.com/rss/search?q=한국경제+금리+환율&hl=ko&gl=KR&ceid=KR:ko"},
+        {"name": "구글뉴스 경제②", "url": "https://news.google.com/rss/search?q=소비+물가+유통&hl=ko&gl=KR&ceid=KR:ko"},
     ],
     "politics": [
-        {"name": "네이버 많이 본 정치", "url": "https://rss.naver.com/main/popularPolitics.xml", "limit": 6},
+        {"name": "구글뉴스 정치①", "url": "https://news.google.com/rss/search?q=한국정치+사회이슈&hl=ko&gl=KR&ceid=KR:ko"},
+        {"name": "구글뉴스 정치②", "url": "https://news.google.com/rss/search?q=한국사회+정책&hl=ko&gl=KR&ceid=KR:ko"},
     ],
     "consumer": [
         {"name": "소비자평가", "url": "https://www.iconsumer.or.kr/rss/allArticle.xml"},
