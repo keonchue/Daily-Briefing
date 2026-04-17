@@ -16,7 +16,7 @@ import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone, timedelta
 
-KCI_API_KEY = os.environ.get("KCI_API_KEY", "53088312")
+KCI_API_KEY = os.environ.get("KCI_API_KEY") or "53088312"
 KCI_API_URL = "https://open.kci.go.kr/po/openapi/openApiSearch.kci"
 KST = timezone(timedelta(hours=9))
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "docs", "papers.json")
@@ -134,7 +134,7 @@ def fetch_keyword(keyword: str, max_pages: int = 5) -> list[dict]:
             "key": KCI_API_KEY,
             "apiCode": "articleSearch",
             "keyword": keyword,
-            "startPage": page,
+            "page": page,
             "displayCount": 100,
         }
         try:
@@ -150,15 +150,18 @@ def fetch_keyword(keyword: str, max_pages: int = 5) -> list[dict]:
 
             # 논문 요소 탐색 (여러 태그명 시도)
             articles = (root.findall(".//Article") or root.findall(".//article")
-                        or root.findall(".//item") or root.findall(".//Item"))
+                        or root.findall(".//item") or root.findall(".//Item")
+                        or root.findall(".//record") or root.findall(".//Record"))
 
             if not articles:
                 if page == 1:
-                    print(f"  [{keyword}] 파싱 실패 — XML 구조:")
+                    print(f"  [{keyword}] 파싱 실패 — XML 구조 (3단계):")
                     for ch in root:
-                        print(f"    <{ch.tag}>")
+                        print(f"    <{ch.tag}>: {(ch.text or '').strip()[:40]}")
                         for c2 in ch:
-                            print(f"      <{c2.tag}>: {(c2.text or '')[:60]}")
+                            print(f"      <{c2.tag}>: {(c2.text or '').strip()[:60]}")
+                            for c3 in c2:
+                                print(f"        <{c3.tag}>: {(c3.text or '').strip()[:60]}")
                 break
 
             new_count = 0
