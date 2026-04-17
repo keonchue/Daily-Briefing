@@ -154,7 +154,7 @@ def fetch_keyword(keyword: str, max_pages: int = 5) -> list[dict]:
                 if page == 1:
                     result_msg = _elem_text(root.find(".//resultMsg"))
                     print(f"  [{keyword}] 결과 없음: {result_msg or '(no records)'}")
-                    print(f"  [DEBUG] 응답 첫 500자: {resp.text[:500]}")
+                    print(f"  [DEBUG] 응답: {resp.text[:800].replace(chr(10), ' ').replace(chr(13), '')}")
                 break
 
             new_count = 0
