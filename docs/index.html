@@ -300,6 +300,12 @@
                 onclick="clearPaperSearch()" style="display:none">×</button>
       </div>
       <div class="paper-filters">
+        <select class="paper-filter-select" id="filter-sort" onchange="filterAndRenderPapers()">
+          <option value="year">최신순</option>
+          <option value="citation">피인용순</option>
+          <option value="view">조회순</option>
+          <option value="default">정확도순</option>
+        </select>
         <select class="paper-filter-select" id="filter-year" onchange="filterAndRenderPapers()">
           <option value="">발행연도 전체</option>
         </select>
@@ -319,14 +325,15 @@
         </select>
         <select class="paper-filter-select" id="filter-method" onchange="filterAndRenderPapers()">
           <option value="">분석방법 전체</option>
-          <option>구조방정식</option>
           <option>설문조사</option>
-          <option>회귀분석</option>
-          <option>질적 연구</option>
           <option>실험연구</option>
           <option>메타분석</option>
+          <option>질적연구(인터뷰/FGI)</option>
+          <option>문헌연구/이론연구</option>
           <option>내용분석</option>
-          <option>혼합연구</option>
+          <option>패널데이터/종단연구</option>
+          <option>빅데이터/텍스트마이닝</option>
+          <option>혼합연구방법</option>
         </select>
       </div>
     </div>
@@ -847,7 +854,8 @@
 
   window.filterAndRenderPapers = function() {
     if (!_papersLoaded) return;
-    const q = (document.getElementById('paper-search-input')?.value || '').toLowerCase().trim();
+    const q      = (document.getElementById('paper-search-input')?.value || '').toLowerCase().trim();
+    const fSort  = document.getElementById('filter-sort')?.value || 'year';
     const fYear  = document.getElementById('filter-year')?.value || '';
     const fTopic = document.getElementById('filter-topic')?.value || '';
     const fMethod = document.getElementById('filter-method')?.value || '';
@@ -855,7 +863,7 @@
     const clearBtn = document.getElementById('paper-clear-btn');
     if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
 
-    _filteredPapers = _allPapers.filter(p => {
+    let papers = _allPapers.filter(p => {
       if (fYear   && String(p.year)  !== fYear)   return false;
       if (fTopic  && p.topic  !== fTopic)          return false;
       if (fMethod && p.method !== fMethod)         return false;
@@ -866,6 +874,17 @@
       return true;
     });
 
+    if (fSort === 'year') {
+      papers = [...papers].sort((a, b) => {
+        if ((b.year || 0) !== (a.year || 0)) return (b.year || 0) - (a.year || 0);
+        return (b.pub_month || 0) - (a.pub_month || 0);
+      });
+    } else if (fSort === 'citation' || fSort === 'view') {
+      papers = [...papers].sort((a, b) => (b.citation_count || 0) - (a.citation_count || 0));
+    }
+    // fSort === 'default': papers.json 원본 순서 유지
+
+    _filteredPapers = papers;
     _paperShowing = 0;
     renderPaperSlice(true);
   };
@@ -890,7 +909,8 @@
       const hasFilter = (document.getElementById('paper-search-input')?.value.trim() ||
         document.getElementById('filter-year')?.value   ||
         document.getElementById('filter-topic')?.value  ||
-        document.getElementById('filter-method')?.value);
+        document.getElementById('filter-method')?.value ||
+        (document.getElementById('filter-sort')?.value || 'year') !== 'year');
       const upd = info?.dataset.updatedAt || '';
       if (info) info.textContent = hasFilter
         ? `${_filteredPapers.length}건 검색됨 · 전체 ${_allPapers.length}건`

@@ -1,16 +1,9 @@
 #!/usr/bin/env python3
-"""
-KCI 소비자학 논문 수집 스크립트
-KCI Open API로 소비자학 관련 논문을 수집하여 docs/papers.json에 저장합니다.
-
-IP 화이트리스트 주의: KCI API는 등록된 IP에서만 호출 가능합니다.
-  - KCI Open API 포털에서 신청한 IP로 실행하거나,
-  - 자체 호스팅 GitHub Actions runner를 사용하세요.
-  - 문의: 042-869-6736 (평일 09:00~18:00)
-"""
+"""KCI 소비자학연구 논문 수집 스크립트 (학술지 기반)"""
 
 import os
 import json
+import re as _re
 import time
 import requests
 import xml.etree.ElementTree as ET
@@ -18,21 +11,9 @@ from datetime import datetime, timezone, timedelta
 
 KCI_API_KEY = os.environ.get("KCI_API_KEY") or "53088312"
 KCI_API_URL = "https://open.kci.go.kr/po/openapi/openApiSearch.kci"
+JOURNAL_NAME = "소비자학연구"
 KST = timezone(timedelta(hours=9))
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "docs", "papers.json")
-
-SEARCH_KEYWORDS = [
-    "소비자학",
-    "소비자행동",
-    "소비자만족",
-    "소비자태도",
-    "소비자정책",
-    "소비자금융",
-    "지속가능소비",
-    "소비자연구",
-    "소비자심리",
-    "소비자피해",
-]
 
 TOPIC_MAP = {
     "디지털·온라인": ["온라인", "디지털", "인터넷", "SNS", "소셜미디어", "모바일", "이커머스", "플랫폼", "유튜브", "인플루언서"],
@@ -48,14 +29,15 @@ TOPIC_MAP = {
 }
 
 METHOD_MAP = {
-    "구조방정식": ["구조방정식", "SEM", "PLS-SEM", "공분산구조", "경로분석"],
-    "회귀분석": ["회귀분석", "regression", "로지스틱회귀", "다중회귀", "위계적 회귀"],
-    "질적 연구": ["인터뷰", "질적연구", "내러티브", "현상학", "근거이론", "사례연구", "포커스그룹", "심층면접"],
-    "실험연구": ["실험연구", "실험설계", "무작위배정", "실험집단", "통제집단", "처치효과"],
-    "메타분석": ["메타분석", "meta-analysis", "체계적 문헌고찰"],
-    "내용분석": ["내용분석", "텍스트분석", "빅데이터", "텍스트마이닝", "토픽모델링", "LDA"],
-    "혼합연구": ["혼합연구", "혼합방법", "mixed method"],
-    "설문조사": ["설문조사", "설문", "questionnaire", "질문지", "survey"],
+    "메타분석": ["메타분석", "meta-analysis", "체계적 문헌고찰", "systematic review"],
+    "빅데이터/텍스트마이닝": ["빅데이터", "텍스트마이닝", "머신러닝", "딥러닝", "인공지능", "자연어처리", "NLP", "sentiment", "word2vec", "BERT", "토픽모델링", "LDA"],
+    "패널데이터/종단연구": ["패널데이터", "종단연구", "종단적", "longitudinal", "panel data", "패널조사", "추적조사"],
+    "질적연구(인터뷰/FGI)": ["심층면접", "포커스그룹", "FGI", "FGD", "focus group", "인터뷰", "질적연구", "내러티브", "현상학", "근거이론", "사례연구"],
+    "실험연구": ["실험연구", "실험설계", "무작위배정", "실험집단", "통제집단", "처치효과", "피험자", "시나리오"],
+    "내용분석": ["내용분석", "텍스트분석", "content analysis"],
+    "혼합연구방법": ["혼합연구", "혼합방법", "mixed method"],
+    "문헌연구/이론연구": ["문헌연구", "이론연구", "문헌고찰", "이론적 고찰", "개념적 모형", "theoretical", "conceptual framework", "문헌 검토"],
+    "설문조사": ["설문조사", "설문", "questionnaire", "survey", "질문지", "구조방정식", "SEM", "회귀분석", "regression"],
 }
 
 
@@ -73,9 +55,6 @@ def infer_method(text: str) -> str:
         if any(kw.lower() in text_lower for kw in keywords):
             return method
     return "설문조사"
-
-
-import re as _re
 
 
 def _elem_text(elem) -> str:
@@ -98,11 +77,10 @@ def parse_record(record_elem) -> dict | None:
         article_id = "TEMP_" + str(abs(hash(title)))[:12]
 
     raw_authors = [_elem_text(a) for a in article_info.findall(".//author")]
-    # "이름(기관)" 형식에서 이름만 추출
     authors = [_re.sub(r"\(.*?\)", "", a).strip() for a in raw_authors if a]
 
     journal_el = record_elem.find(".//journal-name")
-    journal = _elem_text(journal_el) or "소비자학연구"
+    journal = _elem_text(journal_el) or JOURNAL_NAME
 
     year_raw = _elem_text(record_elem.find(".//pub-year"))
     try:
@@ -110,10 +88,22 @@ def parse_record(record_elem) -> dict | None:
     except (ValueError, TypeError):
         year = None
 
+    month_raw = _elem_text(record_elem.find(".//pub-mon"))
+    try:
+        pub_month = int(month_raw) if month_raw else None
+    except (ValueError, TypeError):
+        pub_month = None
+
     abstract_el = article_info.find(".//abstract[@lang='original']")
     abstract = _elem_text(abstract_el)
 
     keywords = [_elem_text(k) for k in article_info.findall(".//kwd") if _elem_text(k)]
+
+    citation_el = article_info.find(".//citation-count")
+    try:
+        citation_count = int(_elem_text(citation_el)) if citation_el is not None else 0
+    except (ValueError, TypeError):
+        citation_count = 0
 
     combined = f"{title} {abstract} {' '.join(keywords)}"
     return {
@@ -121,79 +111,72 @@ def parse_record(record_elem) -> dict | None:
         "title": title,
         "authors": authors,
         "year": year,
+        "pub_month": pub_month,
         "journal": journal,
         "abstract": abstract[:600],
         "keywords": keywords[:10],
+        "citation_count": citation_count,
         "topic": infer_topic(combined),
         "method": infer_method(combined),
     }
 
 
-def fetch_keyword(keyword: str, max_pages: int = 5) -> list[dict]:
+def fetch_journal(max_pages: int = 20) -> list[dict]:
     papers = []
+    seen_ids: set[str] = set()
+
     for page in range(1, max_pages + 1):
         params = {
             "key": KCI_API_KEY,
             "apiCode": "articleSearch",
-            "keyword": keyword,
+            "journal": JOURNAL_NAME,
             "page": page,
             "displayCount": 100,
         }
         try:
             resp = requests.get(KCI_API_URL, params=params, timeout=30)
             resp.raise_for_status()
-
             root = ET.fromstring(resp.content)
 
             total_el = root.find(".//result/total") or root.find(".//total")
             total_count = int(total_el.text) if total_el is not None and total_el.text else 0
 
             records = root.findall(".//record")
-
             if not records:
-                if page == 1:
-                    result_msg = _elem_text(root.find(".//resultMsg"))
-                    print(f"  [{keyword}] 결과 없음: {result_msg or '(no records)'}")
+                result_msg = _elem_text(root.find(".//resultMsg"))
+                print(f"  p{page}: 결과 없음 ({result_msg or 'no records'})")
                 break
 
             new_count = 0
             for rec in records:
                 parsed = parse_record(rec)
-                if parsed:
+                if parsed and parsed["id"] not in seen_ids:
+                    seen_ids.add(parsed["id"])
                     papers.append(parsed)
                     new_count += 1
 
-            print(f"  [{keyword}] p{page}: +{new_count}건 (누적 {len(papers)}/{total_count})")
+            print(f"  p{page}: +{new_count}건 (누적 {len(papers)}/{total_count})")
 
             if len(papers) >= total_count or len(records) == 0:
                 break
             time.sleep(0.5)
 
         except requests.HTTPError as e:
-            print(f"  [{keyword}] HTTP 오류: {e.response.status_code} — {e.response.text[:200]}")
+            print(f"  HTTP 오류: {e.response.status_code}")
             break
         except Exception as e:
-            print(f"  [{keyword}] 오류: {e}")
+            print(f"  오류: {e}")
             break
 
     return papers
 
 
 def main():
-    print("=== KCI 소비자학 논문 수집 시작 ===\n")
+    print(f"=== KCI [{JOURNAL_NAME}] 논문 수집 시작 ===\n")
 
-    seen: dict[str, dict] = {}
-    for kw in SEARCH_KEYWORDS:
-        print(f"키워드: {kw}")
-        for p in fetch_keyword(kw):
-            if p["id"] not in seen:
-                seen[p["id"]] = p
-        print(f"  => 고유 논문 누적: {len(seen)}건\n")
-        time.sleep(1)
+    papers = fetch_journal()
 
-    papers = sorted(seen.values(),
-                    key=lambda p: (p.get("year") or 0, p.get("id", "")),
-                    reverse=True)
+    papers.sort(key=lambda p: (p.get("year") or 0, p.get("pub_month") or 0), reverse=True)
 
     output = {
         "updated_at": datetime.now(KST).isoformat(),
@@ -205,7 +188,7 @@ def main():
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
-    print(f"=== 완료: {len(papers)}건 → docs/papers.json ===")
+    print(f"\n=== 완료: {len(papers)}건 → docs/papers.json ===")
 
 
 if __name__ == "__main__":
