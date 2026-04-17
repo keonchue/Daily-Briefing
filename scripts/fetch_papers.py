@@ -75,52 +75,54 @@ def infer_method(text: str) -> str:
     return "설문조사"
 
 
-def get_text(elem, *tags) -> str:
-    for tag in tags:
-        el = elem.find(tag)
-        if el is not None and el.text:
-            return el.text.strip()
-    return ""
+import re as _re
 
 
-def parse_article(article_elem) -> dict | None:
-    article_id = get_text(article_elem,
-        "articleId", "ArticleId", "artiId", "article_id", "id")
-    title = get_text(article_elem,
-        "title", "Title", "ArticleName", "artiNm", "articleName")
-    authors_raw = get_text(article_elem,
-        "author", "Author", "AuthorName", "authors", "authorName")
-    journal = get_text(article_elem,
-        "journal", "Journal", "JournalName", "journalNm", "journalName")
-    year_raw = get_text(article_elem,
-        "year", "Year", "pubYear", "publishYear", "publicationYear")
-    abstract = get_text(article_elem,
-        "abstract", "Abstract", "artiAbstract", "abstractKo")
-    keywords_raw = get_text(article_elem,
-        "keyword", "Keyword", "keywords", "keywordKo")
+def _elem_text(elem) -> str:
+    return (elem.text or "").strip() if elem is not None else ""
 
+
+def parse_record(record_elem) -> dict | None:
+    article_info = record_elem.find("articleInfo")
+    if article_info is None:
+        return None
+
+    article_id = article_info.get("article-id", "")
+
+    title_el = article_info.find(".//article-title[@lang='original']")
+    title = _elem_text(title_el)
     if not title:
         return None
+
     if not article_id:
-        # id 없으면 제목으로 임시 id 생성
         article_id = "TEMP_" + str(abs(hash(title)))[:12]
 
-    authors = [a.strip() for a in authors_raw.replace(";", ",").split(",") if a.strip()] if authors_raw else []
-    keywords = [k.strip() for k in keywords_raw.replace(";", ",").split(",") if k.strip()] if keywords_raw else []
+    raw_authors = [_elem_text(a) for a in article_info.findall(".//author")]
+    # "이름(기관)" 형식에서 이름만 추출
+    authors = [_re.sub(r"\(.*?\)", "", a).strip() for a in raw_authors if a]
 
+    journal_el = record_elem.find(".//journal-name")
+    journal = _elem_text(journal_el) or "소비자학연구"
+
+    year_raw = _elem_text(record_elem.find(".//pub-year"))
     try:
-        year = int(str(year_raw).strip()[:4]) if year_raw else None
+        year = int(year_raw[:4]) if year_raw else None
     except (ValueError, TypeError):
         year = None
 
-    combined = f"{title} {abstract} {keywords_raw}"
+    abstract_el = article_info.find(".//abstract[@lang='original']")
+    abstract = _elem_text(abstract_el)
+
+    keywords = [_elem_text(k) for k in article_info.findall(".//kwd") if _elem_text(k)]
+
+    combined = f"{title} {abstract} {' '.join(keywords)}"
     return {
         "id": article_id,
         "title": title,
         "authors": authors,
         "year": year,
-        "journal": journal or "소비자학연구",
-        "abstract": abstract[:600] if abstract else "",
+        "journal": journal,
+        "abstract": abstract[:600],
         "keywords": keywords[:10],
         "topic": infer_topic(combined),
         "method": infer_method(combined),
@@ -143,37 +145,27 @@ def fetch_keyword(keyword: str, max_pages: int = 5) -> list[dict]:
 
             root = ET.fromstring(resp.content)
 
-            # 총 건수
-            total_el = (root.find(".//totalCount") or root.find(".//totCnt")
-                        or root.find(".//total_count") or root.find(".//TotalCount"))
+            total_el = root.find(".//result/total") or root.find(".//total")
             total_count = int(total_el.text) if total_el is not None and total_el.text else 0
 
-            # 논문 요소 탐색 (여러 태그명 시도)
-            articles = (root.findall(".//Article") or root.findall(".//article")
-                        or root.findall(".//item") or root.findall(".//Item")
-                        or root.findall(".//record") or root.findall(".//Record"))
+            records = root.findall("record")
 
-            if not articles:
+            if not records:
                 if page == 1:
-                    print(f"  [{keyword}] 파싱 실패 — XML 구조 (3단계):")
-                    for ch in root:
-                        print(f"    <{ch.tag}>: {(ch.text or '').strip()[:40]}")
-                        for c2 in ch:
-                            print(f"      <{c2.tag}>: {(c2.text or '').strip()[:60]}")
-                            for c3 in c2:
-                                print(f"        <{c3.tag}>: {(c3.text or '').strip()[:60]}")
+                    result_msg = _elem_text(root.find(".//resultMsg"))
+                    print(f"  [{keyword}] 결과 없음: {result_msg or '(no records)'}")
                 break
 
             new_count = 0
-            for art in articles:
-                parsed = parse_article(art)
+            for rec in records:
+                parsed = parse_record(rec)
                 if parsed:
                     papers.append(parsed)
                     new_count += 1
 
             print(f"  [{keyword}] p{page}: +{new_count}건 (누적 {len(papers)}/{total_count})")
 
-            if len(papers) >= total_count or len(articles) == 0:
+            if len(papers) >= total_count or len(records) == 0:
                 break
             time.sleep(0.5)
 
