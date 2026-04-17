@@ -17,7 +17,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone, timedelta
 
 KCI_API_KEY = os.environ.get("KCI_API_KEY", "53088312")
-KCI_API_URL = "https://open.kci.go.kr/po/openapi/openApiArticleService.do"
+KCI_API_URL = "https://open.kci.go.kr/po/openapi/openApiSearch.kci"
 KST = timezone(timedelta(hours=9))
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "docs", "papers.json")
 
