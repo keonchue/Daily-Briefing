@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(xargs ls:*)",
+      "Bash(gh secret:*)",
+      "Bash(gh workflow:*)",
+      "Bash(gh run:*)",
+      "Bash(node -e ':*)",
+      "Bash(curl -s \"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=IXIC&outputsize=compact&apikey=F9XHCT07EFY41GKX\")",
+      "Bash(node -e \"const d=JSON.parse\\(require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\)\\); const keys=Object.keys\\(d\\); console.log\\('keys:', keys\\); if\\(d.Note\\) console.log\\('Note:', d.Note\\); if\\(d.Information\\) console.log\\('Info:', d.Information\\); const ts=d['Time Series \\(Daily\\)']; if\\(ts\\){ const dates=Object.keys\\(ts\\).sort\\(\\).slice\\(-3\\); dates.forEach\\(k=>console.log\\(k, ts[k]['4. close']\\)\\); } \")",
+      "Bash(curl -s \"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=IXIC&outputsize=compact&apikey=F9XHCT07EFY41GKX\" -o C:/tmp/av_test.json)",
+      "Bash(node -e \"const d=JSON.parse\\(require\\('fs'\\).readFileSync\\('C:/tmp/av_test.json','utf8'\\)\\); const keys=Object.keys\\(d\\); console.log\\('top-level keys:', keys\\); if\\(d.Note\\) console.log\\('Note:', d.Note\\); if\\(d.Information\\) console.log\\('Info:', d.Information\\); const ts=d['Time Series \\(Daily\\)']; if\\(ts\\){ const dates=Object.keys\\(ts\\).sort\\(\\).slice\\(-3\\); console.log\\('last 3 dates:'\\); dates.forEach\\(k=>console.log\\(k, ts[k]['4. close']\\)\\); } else console.log\\('No Time Series data'\\);\")",
+      "Bash(mkdir -p C:/tmp)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(curl -s 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=__TRACKED_VAR__&outputsize=compact&apikey=F9XHCT07EFY41GKX')",
+      "Bash(curl -s \"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=COMP&outputsize=compact&apikey=F9XHCT07EFY41GKX\")",
+      "Bash(curl -s \"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=QQQ&outputsize=compact&apikey=F9XHCT07EFY41GKX\")",
+      "Bash(curl -s \"https://open.kci.go.kr/po/openapi/openApiArticleService.do?apiCode=articleSearch&key=53088312&query=%EC%86%8C%EB%B9%84%EC%9E%90&displayCount=3\" -H \"Referer: https://open.kci.go.kr\")",
+      "Bash(python3 -c \"import sys; data = sys.stdin.buffer.read\\(\\); print\\(data.decode\\('utf-8', errors='replace'\\)[:500]\\)\")",
+      "Bash(curl -v \"https://open.kci.go.kr/po/openapi/openApiArticleService.do?apiCode=articleSearch&key=53088312&query=%EC%86%8C%EB%B9%84%EC%9E%90&displayCount=3\")",
+      "Bash(curl -s \"https://open.kci.go.kr/po/openapi/openApiArticleService.do?key=53088312&apiCode=articleSearch&title=%EC%86%8C%EB%B9%84%EC%9E%90\")",
+      "Bash(iconv -f EUC-KR -t UTF-8)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit *)"
+    ]
+  }
+}

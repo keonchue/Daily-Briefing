@@ -185,6 +185,39 @@
   .arch-detail-tabs { display:flex; border-bottom:1px solid var(--border); margin-bottom:20px; }
   .arch-detail-tab { flex:1; padding:11px 8px; text-align:center; font-size:12px; color:#aaa; border:none; background:transparent; cursor:pointer; border-bottom:2px solid transparent; transition:all 0.2s; font-family:'Noto Sans KR',sans-serif; }
   .arch-detail-tab.on { color:var(--navy); border-bottom-color:var(--gold); font-weight:500; }
+
+  /* ── 소비자 논문 탭 ──────────────────────────────────────────────────────── */
+  .paper-top-bar { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+  .paper-search-wrap { position:relative; }
+  .paper-search-input { width:100%; background:white; border:1px solid var(--border); border-radius:10px; padding:11px 40px 11px 16px; font-family:'Noto Sans KR',sans-serif; font-size:14px; color:#111; outline:none; transition:border-color 0.2s; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
+  .paper-search-input:focus { border-color:rgba(0,14,92,0.3); }
+  .paper-search-clear { position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:18px; color:#bbb; line-height:1; padding:0; }
+  .paper-search-clear:hover { color:#555; }
+  .paper-filters { display:flex; gap:8px; flex-wrap:wrap; }
+  .paper-filter-select { background:white; border:1px solid var(--border); border-radius:8px; padding:7px 28px 7px 12px; font-family:'Noto Sans KR',sans-serif; font-size:13px; color:#374151; outline:none; cursor:pointer; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; transition:border-color 0.15s; }
+  .paper-filter-select:focus { border-color:rgba(0,14,92,0.3); }
+  .paper-result-info { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#bbb; margin-bottom:14px; min-height:14px; }
+  .paper-card { background:white; border-radius:10px; border:1px solid var(--border); padding:18px 20px; margin-bottom:10px; cursor:pointer; transition:box-shadow 0.15s,border-color 0.15s; text-decoration:none; display:block; color:inherit; }
+  .paper-card:hover { box-shadow:0 4px 16px rgba(0,14,92,0.1); border-color:rgba(0,14,92,0.2); }
+  .paper-card-tags { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px; }
+  .paper-chip { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; padding:3px 8px; border-radius:4px; white-space:nowrap; }
+  .paper-chip.journal { background:rgba(0,14,92,0.07); color:var(--navy); }
+  .paper-chip.year { background:rgba(0,0,0,0.04); color:#777; }
+  .paper-chip.topic { background:rgba(123,74,0,0.07); color:#7B4A00; }
+  .paper-chip.method { background:rgba(27,94,59,0.07); color:#1B5E3B; }
+  .paper-title-text { font-family:'Noto Serif KR',serif; font-size:15px; font-weight:600; color:#111827; line-height:1.55; margin-bottom:7px; }
+  .paper-authors { font-family:'DM Mono',monospace; font-size:11px; color:#999; margin-bottom:9px; }
+  .paper-abstract { font-size:13px; color:#6B7280; line-height:1.8; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .paper-keywords { margin-top:9px; display:flex; flex-wrap:wrap; gap:4px; }
+  .paper-kw { font-size:11px; color:#9CA3AF; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:4px; padding:2px 7px; }
+  .paper-load-more-btn { padding:10px 28px; background:white; border:1px solid var(--border); border-radius:8px; font-family:'Noto Sans KR',sans-serif; font-size:13px; color:var(--navy); cursor:pointer; transition:all 0.15s; }
+  .paper-load-more-btn:hover { background:#f0f0f8; border-color:rgba(0,14,92,0.25); }
+  .paper-empty-state { text-align:center; padding:60px 20px; }
+  .paper-empty-state .pei { font-size:36px; margin-bottom:12px; opacity:0.3; }
+  .paper-empty-state p { font-size:13px; color:#9CA3AF; line-height:1.7; }
+  .paper-setup-hint { background:rgba(0,14,92,0.04); border:1px solid rgba(0,14,92,0.1); border-radius:10px; padding:18px 20px; margin-bottom:20px; font-size:13px; color:#555; line-height:1.75; }
+  .paper-setup-hint strong { display:block; font-family:'Noto Serif KR',serif; font-size:14px; color:#111827; margin-bottom:6px; }
+  .paper-setup-hint code { background:rgba(0,14,92,0.06); border-radius:4px; padding:1px 6px; font-family:'DM Mono',monospace; font-size:12px; color:var(--navy); }
 </style>
 </head>
 <body>
@@ -258,10 +291,49 @@
   <div class="panel" id="panel-pol"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
   <div class="panel" id="panel-con"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
   <div class="panel" id="panel-paper">
-    <div class="coming-soon">
-      <div class="coming-soon-icon">📄</div>
-      <h2>준비 중입니다</h2>
-      <p>소비자학 관련 최신 논문 요약 서비스를<br>준비하고 있습니다.</p>
+    <div class="paper-top-bar">
+      <div class="paper-search-wrap">
+        <input class="paper-search-input" id="paper-search-input"
+               placeholder="논문 제목, 저자, 키워드 검색..."
+               oninput="filterAndRenderPapers()">
+        <button class="paper-search-clear" id="paper-clear-btn"
+                onclick="clearPaperSearch()" style="display:none">×</button>
+      </div>
+      <div class="paper-filters">
+        <select class="paper-filter-select" id="filter-year" onchange="filterAndRenderPapers()">
+          <option value="">발행연도 전체</option>
+        </select>
+        <select class="paper-filter-select" id="filter-topic" onchange="filterAndRenderPapers()">
+          <option value="">주제 전체</option>
+          <option>소비자 행동</option>
+          <option>소비자 심리</option>
+          <option>금융·보험</option>
+          <option>지속가능 소비</option>
+          <option>디지털·온라인</option>
+          <option>식품·건강</option>
+          <option>패션·뷰티</option>
+          <option>소비자 정책</option>
+          <option>서비스·만족</option>
+          <option>취약계층</option>
+          <option>구매 행동</option>
+        </select>
+        <select class="paper-filter-select" id="filter-method" onchange="filterAndRenderPapers()">
+          <option value="">분석방법 전체</option>
+          <option>구조방정식</option>
+          <option>설문조사</option>
+          <option>회귀분석</option>
+          <option>질적 연구</option>
+          <option>실험연구</option>
+          <option>메타분석</option>
+          <option>내용분석</option>
+          <option>혼합연구</option>
+        </select>
+      </div>
+    </div>
+    <div class="paper-result-info" id="paper-result-info"></div>
+    <div id="paper-list"></div>
+    <div style="text-align:center;padding:20px 0;display:none" id="paper-load-more-wrap">
+      <button class="paper-load-more-btn" onclick="loadMorePapers()">논문 더 보기</button>
     </div>
   </div>
   <div class="panel" id="panel-firm">
@@ -286,6 +358,7 @@
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
     btn.classList.add('on');
     document.getElementById('panel-' + id).classList.add('on');
+    if (id === 'paper') ensurePapersLoaded();
   }
 
   // 특정 날짜 아카이브 열기
@@ -726,6 +799,134 @@
   };
 
   updateBmBtn();
+
+  // ── 소비자 논문 탭 ──────────────────────────────────────────────────────────
+  let _allPapers = [], _filteredPapers = [], _paperShowing = 0, _papersLoaded = false;
+  const PAPER_PAGE = 20;
+
+  async function ensurePapersLoaded() {
+    if (_papersLoaded) return;
+    const list = document.getElementById('paper-list');
+    if (!list) return;
+    list.innerHTML = '<div class="loading"><div class="spinner"></div><p>논문 목록 불러오는 중...</p></div>';
+    try {
+      const res = await fetch('papers.json?t=' + Date.now());
+      if (!res.ok) throw new Error('fetch failed');
+      const data = await res.json();
+      _allPapers = data.papers || [];
+      _papersLoaded = true;
+
+      // 연도 필터 옵션 동적 생성
+      const years = [...new Set(_allPapers.map(p => p.year).filter(Boolean))].sort((a, b) => b - a);
+      const ySel = document.getElementById('filter-year');
+      if (ySel) years.forEach(y => {
+        const o = document.createElement('option');
+        o.value = y; o.textContent = y + '년';
+        ySel.appendChild(o);
+      });
+
+      const info = document.getElementById('paper-result-info');
+      if (info) info.dataset.updatedAt = (data.updated_at || '').slice(0, 10);
+
+      filterAndRenderPapers();
+    } catch {
+      const list2 = document.getElementById('paper-list');
+      if (list2) list2.innerHTML = `
+        <div class="paper-setup-hint">
+          <strong>📋 논문 데이터 수집 필요</strong>
+          아래 스크립트를 KCI API 승인 IP에서 실행하면 논문 목록이 자동으로 업데이트됩니다.<br>
+          <code>python scripts/fetch_papers.py</code><br>
+          IP 화이트리스트 문의: <code>042-869-6736</code> (평일 09:00–18:00)
+        </div>
+        <div class="paper-empty-state">
+          <div class="pei">📄</div>
+          <p>아직 수집된 논문이 없어요.<br>스크립트를 실행하여 논문 데이터를 채워 주세요.</p>
+        </div>`;
+    }
+  }
+
+  window.filterAndRenderPapers = function() {
+    if (!_papersLoaded) return;
+    const q = (document.getElementById('paper-search-input')?.value || '').toLowerCase().trim();
+    const fYear  = document.getElementById('filter-year')?.value || '';
+    const fTopic = document.getElementById('filter-topic')?.value || '';
+    const fMethod = document.getElementById('filter-method')?.value || '';
+
+    const clearBtn = document.getElementById('paper-clear-btn');
+    if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
+    _filteredPapers = _allPapers.filter(p => {
+      if (fYear   && String(p.year)  !== fYear)   return false;
+      if (fTopic  && p.topic  !== fTopic)          return false;
+      if (fMethod && p.method !== fMethod)         return false;
+      if (q) {
+        const txt = [p.title, ...(p.authors || []), p.abstract || '', ...(p.keywords || [])].join(' ').toLowerCase();
+        if (!txt.includes(q)) return false;
+      }
+      return true;
+    });
+
+    _paperShowing = 0;
+    renderPaperSlice(true);
+  };
+
+  window.clearPaperSearch = function() {
+    const inp = document.getElementById('paper-search-input');
+    if (inp) { inp.value = ''; inp.focus(); }
+    filterAndRenderPapers();
+  };
+
+  window.loadMorePapers = function() { renderPaperSlice(false); };
+
+  function renderPaperSlice(reset) {
+    const list     = document.getElementById('paper-list');
+    const info     = document.getElementById('paper-result-info');
+    const moreWrap = document.getElementById('paper-load-more-wrap');
+    if (!list) return;
+
+    const slice = _filteredPapers.slice(_paperShowing, _paperShowing + PAPER_PAGE);
+
+    if (reset) {
+      const hasFilter = (document.getElementById('paper-search-input')?.value.trim() ||
+        document.getElementById('filter-year')?.value   ||
+        document.getElementById('filter-topic')?.value  ||
+        document.getElementById('filter-method')?.value);
+      const upd = info?.dataset.updatedAt || '';
+      if (info) info.textContent = hasFilter
+        ? `${_filteredPapers.length}건 검색됨 · 전체 ${_allPapers.length}건`
+        : `총 ${_allPapers.length}건${upd ? ' · ' + upd + ' 기준' : ''}`;
+
+      if (!_filteredPapers.length) {
+        list.innerHTML = '<div class="paper-empty-state"><div class="pei">🔍</div><p>검색 결과가 없어요.<br>다른 키워드나 필터를 시도해 보세요.</p></div>';
+        if (moreWrap) moreWrap.style.display = 'none';
+        return;
+      }
+      list.innerHTML = slice.map(paperCardHtml).join('');
+    } else {
+      list.insertAdjacentHTML('beforeend', slice.map(paperCardHtml).join(''));
+    }
+
+    _paperShowing += slice.length;
+    if (moreWrap) moreWrap.style.display = _paperShowing < _filteredPapers.length ? 'block' : 'none';
+  }
+
+  function paperCardHtml(p) {
+    const url = 'https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=' + encodeURIComponent(p.id || '');
+    const authors = (p.authors || []).join(', ') || '—';
+    const kws = (p.keywords || []).slice(0, 5).map(k => `<span class="paper-kw">${k}</span>`).join('');
+    return `<a class="paper-card" href="${url}" target="_blank" rel="noopener">
+  <div class="paper-card-tags">
+    ${p.journal ? `<span class="paper-chip journal">${p.journal}</span>` : ''}
+    ${p.year    ? `<span class="paper-chip year">${p.year}</span>` : ''}
+    ${p.topic   ? `<span class="paper-chip topic">${p.topic}</span>` : ''}
+    ${p.method  ? `<span class="paper-chip method">${p.method}</span>` : ''}
+  </div>
+  <div class="paper-title-text">${p.title || ''}</div>
+  <div class="paper-authors">${authors}</div>
+  ${p.abstract ? `<div class="paper-abstract">${p.abstract}</div>` : ''}
+  ${kws ? `<div class="paper-keywords">${kws}</div>` : ''}
+</a>`;
+  }
 
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
