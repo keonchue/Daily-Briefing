@@ -148,13 +148,12 @@ def fetch_keyword(keyword: str, max_pages: int = 5) -> list[dict]:
             total_el = root.find(".//result/total") or root.find(".//total")
             total_count = int(total_el.text) if total_el is not None and total_el.text else 0
 
-            records = root.findall("record")
+            records = root.findall(".//record")
 
             if not records:
                 if page == 1:
                     result_msg = _elem_text(root.find(".//resultMsg"))
                     print(f"  [{keyword}] 결과 없음: {result_msg or '(no records)'}")
-                    print(f"  [DEBUG] 응답: {resp.text[:800].replace(chr(10), ' ').replace(chr(13), '')}")
                 break
 
             new_count = 0
