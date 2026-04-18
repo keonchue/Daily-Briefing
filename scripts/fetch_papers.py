@@ -16,16 +16,15 @@ KST = timezone(timedelta(hours=9))
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "docs", "papers.json")
 
 TOPIC_MAP = {
-    "디지털·온라인": ["온라인", "디지털", "인터넷", "SNS", "소셜미디어", "모바일", "이커머스", "플랫폼", "유튜브", "인플루언서"],
-    "금융·보험": ["금융", "보험", "투자", "신용", "대출", "연금", "부채", "저축", "핀테크", "주식", "가계부채"],
-    "지속가능 소비": ["지속가능", "친환경", "녹색소비", "탄소", "ESG", "환경", "재활용", "공정무역", "윤리적소비"],
-    "식품·건강": ["식품", "건강", "의료", "영양", "음식", "의약품", "건강기능식품", "다이어트", "안전"],
-    "패션·뷰티": ["패션", "의류", "뷰티", "화장품", "의복", "피부"],
-    "소비자 정책": ["정책", "법률", "규제", "제도", "보호", "권리", "피해구제", "공정거래"],
-    "서비스·만족": ["서비스", "만족", "충성도", "신뢰", "품질", "고객", "서비스품질"],
-    "취약계층": ["청소년", "노인", "고령", "장애", "저소득", "취약", "아동", "시니어"],
-    "구매 행동": ["구매", "의사결정", "선택", "충동구매", "쇼핑", "구매의도"],
-    "소비자 심리": ["심리", "인식", "지각", "동기", "감정", "정서", "인지", "자아개념"],
+    "구매 의사결정": ["구매의사결정", "구매결정", "의사결정", "구매의도", "충동구매", "쇼핑", "선택행동"],
+    "마케팅 전략": ["마케팅전략", "마케팅 전략", "광고전략", "프로모션", "포지셔닝", "세분화", "타겟팅", "마케팅믹스"],
+    "소비자 만족/불만족": ["소비자만족", "고객만족", "소비자불만", "불만족", "충성도", "재구매의도", "서비스품질"],
+    "온라인/디지털 소비": ["온라인", "디지털", "인터넷", "SNS", "소셜미디어", "모바일", "이커머스", "플랫폼", "유튜브", "인플루언서", "핀테크"],
+    "지속가능 소비/윤리적 소비": ["지속가능", "친환경", "녹색소비", "탄소", "ESG", "환경", "재활용", "공정무역", "윤리적소비", "윤리적 소비"],
+    "브랜드 태도": ["브랜드태도", "브랜드 태도", "브랜드신뢰", "브랜드충성", "브랜드이미지", "브랜드자산", "브랜드정체성"],
+    "소비자 정보처리": ["정보처리", "정보탐색", "정보활용", "인지", "심리", "동기", "감정", "정서", "자아개념", "지각"],
+    "가격 지각": ["가격지각", "가격 지각", "가격공정성", "지불의사", "가격민감성", "할인", "가격태도", "준거가격"],
+    "소비자 복지/정책": ["소비자복지", "소비자정책", "정책", "법률", "규제", "제도", "보호", "피해구제", "공정거래", "취약계층", "청소년소비자", "노인소비자"],
 }
 
 METHOD_MAP = {
@@ -79,6 +78,11 @@ def parse_record(record_elem) -> dict | None:
     raw_authors = [_elem_text(a) for a in article_info.findall(".//author")]
     authors = [_re.sub(r"\(.*?\)", "", a).strip() for a in raw_authors if a]
 
+    # 소속기관 파싱 (가능한 경우)
+    aff_els = article_info.findall(".//aff") or record_elem.findall(".//aff")
+    affiliations = list({_re.sub(r"\s+", " ", _elem_text(a)).strip() for a in aff_els if _elem_text(a)})
+    affiliations = [a for a in affiliations if a and len(a) > 2][:5]
+
     journal_el = record_elem.find(".//journal-name")
     journal = _elem_text(journal_el) or JOURNAL_NAME
 
@@ -99,14 +103,21 @@ def parse_record(record_elem) -> dict | None:
 
     keywords = [_elem_text(k) for k in article_info.findall(".//kwd") if _elem_text(k)]
 
-    citation_el = article_info.find(".//citation-count")
+    citation_el = article_info.find(".//citation-count") or record_elem.find(".//citation-count")
     try:
         citation_count = int(_elem_text(citation_el)) if citation_el is not None else 0
     except (ValueError, TypeError):
         citation_count = 0
 
+    view_el = article_info.find(".//view-count") or record_elem.find(".//view-count") \
+              or article_info.find(".//download-count") or record_elem.find(".//download-count")
+    try:
+        view_count = int(_elem_text(view_el)) if view_el is not None else 0
+    except (ValueError, TypeError):
+        view_count = 0
+
     combined = f"{title} {abstract} {' '.join(keywords)}"
-    return {
+    result = {
         "id": article_id,
         "title": title,
         "authors": authors,
@@ -116,9 +127,13 @@ def parse_record(record_elem) -> dict | None:
         "abstract": abstract[:600],
         "keywords": keywords[:10],
         "citation_count": citation_count,
+        "view_count": view_count,
         "topic": infer_topic(combined),
         "method": infer_method(combined),
     }
+    if affiliations:
+        result["affiliations"] = affiliations
+    return result
 
 
 def fetch_journal(max_pages: int = 20) -> list[dict]:

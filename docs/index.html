@@ -218,6 +218,60 @@
   .paper-setup-hint { background:rgba(0,14,92,0.04); border:1px solid rgba(0,14,92,0.1); border-radius:10px; padding:18px 20px; margin-bottom:20px; font-size:13px; color:#555; line-height:1.75; }
   .paper-setup-hint strong { display:block; font-family:'Noto Serif KR',serif; font-size:14px; color:#111827; margin-bottom:6px; }
   .paper-setup-hint code { background:rgba(0,14,92,0.06); border-radius:4px; padding:1px 6px; font-family:'DM Mono',monospace; font-size:12px; color:var(--navy); }
+
+  /* Paper card stats */
+  .paper-card { position:relative; }
+  .paper-card-stats { position:absolute; top:14px; right:14px; display:flex; gap:8px; font-family:'DM Mono',monospace; font-size:10px; color:#bbb; }
+  .paper-stat { display:flex; align-items:center; gap:3px; white-space:nowrap; }
+
+  /* Advanced filters (author / affiliation checkboxes) */
+  .paper-adv-toggle { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#bbb; background:none; border:1px solid var(--border); border-radius:6px; padding:5px 12px; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+  .paper-adv-toggle:hover { color:#555; border-color:#bbb; }
+  .paper-adv-toggle.open { color:var(--navy); border-color:rgba(0,14,92,0.25); }
+  .paper-adv-section { background:#F9FAFB; border:1px solid var(--border); border-radius:10px; padding:14px 16px; display:none; }
+  .paper-adv-section.open { display:block; }
+  .paper-adv-inner { display:flex; gap:24px; flex-wrap:wrap; }
+  .paper-cb-group { flex:1; min-width:180px; }
+  .paper-cb-group-title { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:var(--navy); margin-bottom:8px; opacity:0.7; }
+  .paper-cb-list { max-height:150px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; }
+  .paper-cb-list::-webkit-scrollbar { width:3px; }
+  .paper-cb-list::-webkit-scrollbar-thumb { background:#ddd; border-radius:2px; }
+  .paper-cb-item { display:flex; align-items:center; gap:7px; font-size:12px; color:#4B5563; cursor:pointer; padding:2px 0; }
+  .paper-cb-item input[type=checkbox] { width:13px; height:13px; cursor:pointer; accent-color:var(--navy); flex-shrink:0; }
+  .paper-cb-count { font-family:'DM Mono',monospace; font-size:10px; color:#ccc; margin-left:3px; }
+  .paper-cb-empty { font-size:12px; color:#bbb; font-family:'DM Mono',monospace; }
+
+  /* Company analysis tab */
+  .firm-industry-tabs { display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap; }
+  .firm-industry-tab { padding:7px 18px; border-radius:20px; border:1px solid var(--border); background:white; font-size:12px; font-family:'Noto Sans KR',sans-serif; color:#555; cursor:pointer; transition:all 0.2s; }
+  .firm-industry-tab.on { background:var(--navy); color:#FAF8F5; border-color:var(--navy); }
+  .firm-industry-tab:hover:not(.on) { border-color:rgba(0,14,92,0.25); color:var(--navy); }
+  .firm-company-card { background:white; border-radius:12px; border:1px solid var(--border); padding:24px; margin-bottom:20px; }
+  .firm-company-name { font-family:'Noto Serif KR',serif; font-size:20px; font-weight:700; color:#111827; }
+  .firm-company-sub { color:#999; font-size:12px; margin-top:3px; }
+  .firm-company-meta { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .firm-section-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:var(--navy); opacity:0.6; margin-top:18px; margin-bottom:8px; display:block; }
+  .firm-section-text { font-size:13px; color:#555; line-height:1.85; }
+  .firm-swot { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media (max-width:480px) { .firm-swot { grid-template-columns:1fr; } }
+  .firm-swot-item { padding:12px 14px; border-radius:8px; }
+  .firm-swot-item.s { background:#EFF6FF; border:1px solid #BFDBFE; }
+  .firm-swot-item.w { background:#FFF7ED; border:1px solid #FED7AA; }
+  .firm-swot-item.o { background:#F0FFF4; border:1px solid #BBF7D0; }
+  .firm-swot-item.t { background:#FFF1F2; border:1px solid #FECDD3; }
+  .firm-swot-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:6px; font-weight:600; }
+  .firm-swot-item.s .firm-swot-label { color:#1D4ED8; }
+  .firm-swot-item.w .firm-swot-label { color:#C2410C; }
+  .firm-swot-item.o .firm-swot-label { color:#15803D; }
+  .firm-swot-item.t .firm-swot-label { color:#BE123C; }
+  .firm-swot-list { list-style:none; margin:0; padding:0; }
+  .firm-swot-list li { font-size:12px; color:#374151; line-height:1.7; padding-left:12px; position:relative; }
+  .firm-swot-list li::before { content:'·'; position:absolute; left:0; color:#999; }
+  .firm-issues { display:flex; flex-direction:column; gap:10px; }
+  .firm-issue-item { background:#F9FAFB; border-radius:8px; padding:12px 14px; border:1px solid #E5E7EB; }
+  .firm-issue-title { font-family:'Noto Serif KR',serif; font-size:13px; font-weight:600; color:#111827; margin-bottom:4px; }
+  .firm-issue-content { font-size:12px; color:#6B7280; line-height:1.75; }
+  .firm-updated { text-align:right; margin-top:14px; font-family:'DM Mono',monospace; font-size:10px; color:#ccc; }
 </style>
 </head>
 <body>
@@ -312,29 +366,32 @@
         <select class="paper-filter-select" id="filter-topic" onchange="filterAndRenderPapers()">
           <option value="">주제 전체</option>
           <option>소비자 행동</option>
-          <option>소비자 심리</option>
-          <option>금융·보험</option>
-          <option>지속가능 소비</option>
-          <option>디지털·온라인</option>
-          <option>식품·건강</option>
-          <option>패션·뷰티</option>
-          <option>소비자 정책</option>
-          <option>서비스·만족</option>
-          <option>취약계층</option>
-          <option>구매 행동</option>
+          <option>구매 의사결정</option>
+          <option>마케팅 전략</option>
+          <option>소비자 만족/불만족</option>
+          <option>온라인/디지털 소비</option>
+          <option>지속가능 소비/윤리적 소비</option>
+          <option>브랜드 태도</option>
+          <option>소비자 정보처리</option>
+          <option>가격 지각</option>
+          <option>소비자 복지/정책</option>
         </select>
         <select class="paper-filter-select" id="filter-method" onchange="filterAndRenderPapers()">
           <option value="">분석방법 전체</option>
-          <option>설문조사</option>
-          <option>실험연구</option>
-          <option>메타분석</option>
-          <option>질적연구(인터뷰/FGI)</option>
-          <option>문헌연구/이론연구</option>
-          <option>내용분석</option>
-          <option>패널데이터/종단연구</option>
-          <option>빅데이터/텍스트마이닝</option>
-          <option>혼합연구방법</option>
         </select>
+        <button class="paper-adv-toggle" id="paper-adv-btn" onclick="toggleAdvFilters()">저자 · 소속 ▾</button>
+      </div>
+      <div class="paper-adv-section" id="paper-adv-section">
+        <div class="paper-adv-inner">
+          <div class="paper-cb-group">
+            <div class="paper-cb-group-title">저자 (다중 선택)</div>
+            <div class="paper-cb-list" id="author-cb-list"><span class="paper-cb-empty">불러오는 중...</span></div>
+          </div>
+          <div class="paper-cb-group" id="affil-cb-group" style="display:none">
+            <div class="paper-cb-group-title">저자 소속 (다중 선택)</div>
+            <div class="paper-cb-list" id="affil-cb-list"><span class="paper-cb-empty">데이터 없음</span></div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="paper-result-info" id="paper-result-info"></div>
@@ -344,11 +401,7 @@
     </div>
   </div>
   <div class="panel" id="panel-firm">
-    <div class="coming-soon">
-      <div class="coming-soon-icon">🏢</div>
-      <h2>준비 중입니다</h2>
-      <p>주요 기업의 소비자 전략 분석 서비스를<br>준비하고 있습니다.</p>
-    </div>
+    <div id="firm-content"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
   </div>
   <div class="panel" id="panel-archive"></div>
   <div class="panel" id="panel-search"></div>
@@ -366,6 +419,7 @@
     btn.classList.add('on');
     document.getElementById('panel-' + id).classList.add('on');
     if (id === 'paper') ensurePapersLoaded();
+    if (id === 'firm') ensureCompaniesLoaded();
   }
 
   // 특정 날짜 아카이브 열기
@@ -832,6 +886,46 @@
         ySel.appendChild(o);
       });
 
+      // 분석방법 필터 동적 생성 (데이터 기반)
+      const methods = [...new Set(_allPapers.map(p => p.method).filter(Boolean))].sort();
+      const mSel = document.getElementById('filter-method');
+      if (mSel) methods.forEach(m => {
+        const o = document.createElement('option');
+        o.value = m; o.textContent = m;
+        mSel.appendChild(o);
+      });
+
+      // 저자 체크박스 생성 (상위 20명)
+      const authorCount = {};
+      _allPapers.forEach(p => (p.authors || []).forEach(a => { authorCount[a] = (authorCount[a] || 0) + 1; }));
+      const topAuthors = Object.entries(authorCount).sort((a, b) => b[1] - a[1]).slice(0, 20);
+      const cbList = document.getElementById('author-cb-list');
+      if (cbList) {
+        if (topAuthors.length) {
+          cbList.innerHTML = topAuthors.map(([name, cnt]) =>
+            `<label class="paper-cb-item"><input type="checkbox" class="paper-author-cb" value="${name}" onchange="filterAndRenderPapers()"><span>${name}</span><span class="paper-cb-count">${cnt}</span></label>`
+          ).join('');
+        } else {
+          cbList.innerHTML = '<span class="paper-cb-empty">저자 데이터 없음</span>';
+        }
+      }
+
+      // 소속 체크박스 생성 (데이터 있으면)
+      const hasAffil = _allPapers.some(p => p.affiliations && p.affiliations.length);
+      if (hasAffil) {
+        const affilCount = {};
+        _allPapers.forEach(p => (p.affiliations || []).forEach(a => { if(a) affilCount[a] = (affilCount[a] || 0) + 1; }));
+        const topAffils = Object.entries(affilCount).sort((a, b) => b[1] - a[1]).slice(0, 15);
+        const afList = document.getElementById('affil-cb-list');
+        const afGroup = document.getElementById('affil-cb-group');
+        if (afGroup) afGroup.style.display = '';
+        if (afList && topAffils.length) {
+          afList.innerHTML = topAffils.map(([name, cnt]) =>
+            `<label class="paper-cb-item"><input type="checkbox" class="paper-affil-cb" value="${name}" onchange="filterAndRenderPapers()"><span>${name}</span><span class="paper-cb-count">${cnt}</span></label>`
+          ).join('');
+        }
+      }
+
       const info = document.getElementById('paper-result-info');
       if (info) info.dataset.updatedAt = (data.updated_at || '').slice(0, 10);
 
@@ -854,19 +948,23 @@
 
   window.filterAndRenderPapers = function() {
     if (!_papersLoaded) return;
-    const q      = (document.getElementById('paper-search-input')?.value || '').toLowerCase().trim();
-    const fSort  = document.getElementById('filter-sort')?.value || 'year';
-    const fYear  = document.getElementById('filter-year')?.value || '';
-    const fTopic = document.getElementById('filter-topic')?.value || '';
+    const q       = (document.getElementById('paper-search-input')?.value || '').toLowerCase().trim();
+    const fSort   = document.getElementById('filter-sort')?.value || 'year';
+    const fYear   = document.getElementById('filter-year')?.value || '';
+    const fTopic  = document.getElementById('filter-topic')?.value || '';
     const fMethod = document.getElementById('filter-method')?.value || '';
+    const selAuthors = [...document.querySelectorAll('.paper-author-cb:checked')].map(cb => cb.value);
+    const selAffils  = [...document.querySelectorAll('.paper-affil-cb:checked')].map(cb => cb.value);
 
     const clearBtn = document.getElementById('paper-clear-btn');
     if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
 
     let papers = _allPapers.filter(p => {
-      if (fYear   && String(p.year)  !== fYear)   return false;
-      if (fTopic  && p.topic  !== fTopic)          return false;
-      if (fMethod && p.method !== fMethod)         return false;
+      if (fYear   && String(p.year) !== fYear)  return false;
+      if (fTopic  && p.topic !== fTopic)         return false;
+      if (fMethod && p.method !== fMethod)        return false;
+      if (selAuthors.length && !selAuthors.some(a => (p.authors || []).includes(a))) return false;
+      if (selAffils.length  && !selAffils.some(a => (p.affiliations || []).some(af => af.includes(a)))) return false;
       if (q) {
         const txt = [p.title, ...(p.authors || []), p.abstract || '', ...(p.keywords || [])].join(' ').toLowerCase();
         if (!txt.includes(q)) return false;
@@ -879,8 +977,10 @@
         if ((b.year || 0) !== (a.year || 0)) return (b.year || 0) - (a.year || 0);
         return (b.pub_month || 0) - (a.pub_month || 0);
       });
-    } else if (fSort === 'citation' || fSort === 'view') {
+    } else if (fSort === 'citation') {
       papers = [...papers].sort((a, b) => (b.citation_count || 0) - (a.citation_count || 0));
+    } else if (fSort === 'view') {
+      papers = [...papers].sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
     }
     // fSort === 'default': papers.json 원본 순서 유지
 
@@ -934,8 +1034,10 @@
     const url = 'https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=' + encodeURIComponent(p.id || '');
     const authors = (p.authors || []).join(', ') || '—';
     const kws = (p.keywords || []).slice(0, 5).map(k => `<span class="paper-kw">${k}</span>`).join('');
+    const statsHtml = (p.citation_count || p.view_count) ? `<div class="paper-card-stats">${p.view_count ? `<span class="paper-stat" title="조회수">👁 ${p.view_count.toLocaleString()}</span>` : ''}${p.citation_count ? `<span class="paper-stat" title="피인용수">📑 ${p.citation_count}</span>` : ''}</div>` : '';
     return `<a class="paper-card" href="${url}" target="_blank" rel="noopener">
-  <div class="paper-card-tags">
+  ${statsHtml}
+  <div class="paper-card-tags" style="${statsHtml ? 'padding-right:100px' : ''}">
     ${p.journal ? `<span class="paper-chip journal">${p.journal}</span>` : ''}
     ${p.year    ? `<span class="paper-chip year">${p.year}</span>` : ''}
     ${p.topic   ? `<span class="paper-chip topic">${p.topic}</span>` : ''}
@@ -946,6 +1048,84 @@
   ${p.abstract ? `<div class="paper-abstract">${p.abstract}</div>` : ''}
   ${kws ? `<div class="paper-keywords">${kws}</div>` : ''}
 </a>`;
+  }
+
+  // ── 고급 필터 토글 ───────────────────────────────────────────────────────────
+  window.toggleAdvFilters = function() {
+    const sec = document.getElementById('paper-adv-section');
+    const btn = document.getElementById('paper-adv-btn');
+    const open = sec.classList.toggle('open');
+    btn.classList.toggle('open', open);
+    btn.textContent = '저자 · 소속 ' + (open ? '▴' : '▾');
+  };
+
+  // ── 기업 분석 탭 ─────────────────────────────────────────────────────────────
+  let _companiesLoaded = false, _companiesData = null, _activeIndustry = null;
+
+  async function ensureCompaniesLoaded() {
+    if (_companiesLoaded) { renderCompanyPanel(); return; }
+    const container = document.getElementById('firm-content');
+    if (!container) return;
+    container.innerHTML = '<div class="loading"><div class="spinner"></div><p>기업 분석 불러오는 중...</p></div>';
+    try {
+      const res = await fetch('companies.json?t=' + Date.now());
+      if (!res.ok) throw new Error();
+      _companiesData = await res.json();
+      _companiesLoaded = true;
+      renderCompanyPanel();
+    } catch {
+      container.innerHTML = '<div class="empty"><p>기업 분석 데이터를 불러오지 못했어요.<br><small style="font-family:\'DM Mono\',monospace;font-size:11px;color:#bbb">python scripts/analyze_companies.py 실행 후 재시도</small></p></div>';
+    }
+  }
+
+  function renderCompanyPanel() {
+    const data = _companiesData;
+    const container = document.getElementById('firm-content');
+    if (!data || !data.industries || !data.industries.length || !container) return;
+    if (!_activeIndustry) _activeIndustry = data.industries[0].id;
+
+    const tabs = data.industries.map(ind =>
+      `<button class="firm-industry-tab${ind.id === _activeIndustry ? ' on' : ''}" onclick="switchFirmIndustry('${ind.id}')">${ind.name}</button>`
+    ).join('');
+
+    const activeInd = data.industries.find(i => i.id === _activeIndustry);
+    const cards = (activeInd?.companies || []).map(renderFirmCard).join('');
+    const upd = data.updated_at ? data.updated_at.slice(0, 10) : '';
+
+    container.innerHTML = `
+      <div class="firm-industry-tabs">${tabs}</div>
+      ${cards || '<div class="empty"><p>기업 데이터가 없어요.</p></div>'}
+      ${upd ? `<div class="update-bar">기업 분석 기준일: ${upd}</div>` : ''}`;
+  }
+
+  window.switchFirmIndustry = function(id) {
+    _activeIndustry = id;
+    renderCompanyPanel();
+  };
+
+  function renderFirmCard(c) {
+    const swot = c.swot || {};
+    const swotHtml = `<div class="firm-swot">
+      <div class="firm-swot-item s"><div class="firm-swot-label">Strengths · 강점</div><ul class="firm-swot-list">${(swot.strengths||[]).map(s=>`<li>${s}</li>`).join('')}</ul></div>
+      <div class="firm-swot-item w"><div class="firm-swot-label">Weaknesses · 약점</div><ul class="firm-swot-list">${(swot.weaknesses||[]).map(s=>`<li>${s}</li>`).join('')}</ul></div>
+      <div class="firm-swot-item o"><div class="firm-swot-label">Opportunities · 기회</div><ul class="firm-swot-list">${(swot.opportunities||[]).map(s=>`<li>${s}</li>`).join('')}</ul></div>
+      <div class="firm-swot-item t"><div class="firm-swot-label">Threats · 위협</div><ul class="firm-swot-list">${(swot.threats||[]).map(s=>`<li>${s}</li>`).join('')}</ul></div>
+    </div>`;
+    const issues = (c.recent_issues||[]).map(issue =>
+      `<div class="firm-issue-item"><div class="firm-issue-title">${issue.title}</div><div class="firm-issue-content">${issue.content}</div></div>`
+    ).join('');
+    const meta = [c.ticker && `<span class="paper-chip year">${c.ticker}</span>`, c.country && `<span class="paper-chip journal">${c.country}</span>`].filter(Boolean).join('');
+    return `<div class="firm-company-card">
+      <div class="firm-company-name">${c.name_ko||c.name}</div>
+      <div class="firm-company-sub">${c.name}</div>
+      <div class="firm-company-meta">${meta}</div>
+      ${c.overview ? `<span class="firm-section-label">기업 개요</span><div class="firm-section-text">${c.overview}</div>` : ''}
+      <span class="firm-section-label" style="margin-top:22px">SWOT 분석</span>
+      ${swotHtml}
+      ${c.consumer_strategy ? `<span class="firm-section-label">소비자 전략</span><div class="firm-section-text">${c.consumer_strategy}</div>` : ''}
+      ${issues ? `<span class="firm-section-label">최근 이슈</span><div class="firm-issues">${issues}</div>` : ''}
+      <div class="firm-updated">기준일: ${c.updated_at||''}</div>
+    </div>`;
   }
 
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);

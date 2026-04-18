@@ -1,0 +1,31 @@
+name: 기업 분석 자동 생성
+
+on:
+  schedule:
+    - cron: "0 2 * * 1"   # 매주 월요일 한국시간 11:00 (UTC 02:00)
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install anthropic
+
+      - name: 기업 분석 생성
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scripts/analyze_companies.py
+
+      - name: 커밋 푸시
+        run: |
+          git config --global user.name "Company Bot"
+          git config --global user.email "bot@briefing"
+          git add docs/companies.json
+          git diff --staged --quiet || git commit -m "기업 분석 업데이트: $(date +'%Y-%m-%d')"
+          git push
