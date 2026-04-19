@@ -235,13 +235,18 @@ def call_claude_section(section_name, news_list, extra_context=""):
 {news_text}
 
 반드시 아래 형식으로만 응답. 코드블록 없이 JSON만 출력:
-{{"summary":"2문장요약","cards":[{{"tag":"태그","headline":"제목","body":"설명","insight":"소비자학관점","source_ids":["N0"]}}]}}
+{{"summary":"2문장요약","cards":[{{"tag":"태그","headline":"기사제목","body":"본문","insight":"소비자학관점","source_ids":["N0"]}}]}}
 
-규칙: cards 정확히 3개. 문자열안에 큰따옴표 금지. source_ids는 위 N번호만 사용."""
+규칙:
+- cards 정확히 3개
+- headline은 해당 기사의 제목을 원문 그대로 사용 (절대 요약하거나 변경 금지)
+- body는 5~7문장으로 작성. 구체적 수치(%, 금액, 증감률, 순위), 인물명, 기업명을 반드시 포함. 실제 뉴스 기사처럼 상세하고 구체적으로 서술
+- insight는 소비자 행동·마케팅 전략·소비 트렌드·소비자 정책 관점에서 3~4문장으로 구체적 분석. 이론적 개념이나 실무적 시사점 포함
+- 문자열안에 큰따옴표 금지. source_ids는 위 N번호만 사용"""
 
     response = client.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=2000,
+        max_tokens=3500,
         messages=[{"role": "user", "content": prompt}]
     )
     result = parse_json_safe(response.content[0].text)

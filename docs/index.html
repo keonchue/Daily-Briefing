@@ -100,31 +100,32 @@
   .sum-label { font-family:'DM Mono',monospace; font-size:var(--fs-3); letter-spacing:0.16em; color:var(--gold); text-transform:uppercase; margin-bottom:var(--sp2); opacity:0.9; }
   .sum-text { font-size:var(--fs-5); color:#585858; line-height:1.85; font-weight:300; }
 
-  /* ── Grid & cards ────────────────────────────────────────────────────────── */
-  .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--sp4); }
-  @media (max-width:720px) { .grid { grid-template-columns:1fr; } }
-  @media (min-width:480px) and (max-width:720px) { .grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  /* ── News list ───────────────────────────────────────────────────────────── */
+  .news-list { background:#fff; border-radius:10px; border:1px solid var(--border); box-shadow:var(--sh-xs); overflow:hidden; }
+  .news-item { padding:var(--sp5) var(--sp5) var(--sp4); border-bottom:1px solid #f0ece4; position:relative; }
+  .news-item:last-child { border-bottom:none; }
 
-  .card { background:#fff; border-radius:10px; overflow:hidden; display:flex; flex-direction:column; border:1px solid var(--border); box-shadow:var(--sh-xs); transition:box-shadow var(--t-std) var(--ease),transform var(--t-std) var(--ease),border-color var(--t-std) var(--ease); }
-  .card:hover { box-shadow:var(--sh-md); border-color:rgba(0,14,92,0.13); transform:translateY(-2px); }
-  .card-bar { height:3px; background:var(--navy); }
-  .card.pol .card-bar { background:#1B5E3B; }
-  .card.con .card-bar { background:#7B4A00; }
-  .card-inner { padding:var(--sp4) var(--sp4) var(--sp3); flex:1; display:flex; flex-direction:column; position:relative; }
-  .tag { display:inline-block; font-family:'DM Mono',monospace; font-size:var(--fs-3); letter-spacing:0.1em; text-transform:uppercase; padding:var(--sp1) var(--sp2); border-radius:3px; margin-bottom:var(--sp3); background:rgba(0,14,92,0.06); color:var(--navy); }
-  .card.pol .tag { background:rgba(27,94,59,0.06); color:#1B5E3B; }
-  .card.con .tag { background:rgba(123,74,0,0.06); color:#7B4A00; }
-  .headline { font-family:'Noto Serif KR',serif; font-size:var(--fs-5); font-weight:600; line-height:1.5; margin-bottom:var(--sp2); color:#111827; }
-  .body-text { font-size:var(--fs-4); color:#6B7280; line-height:1.85; flex:1; font-weight:300; }
-  .insight { margin-top:var(--sp3); padding:var(--sp2) var(--sp3); border-radius:0 6px 6px 0; font-size:var(--fs-4); line-height:1.75; background:#F5F6FF; color:#374151; border-left:2px solid rgba(0,14,92,0.2); }
-  .card.pol .insight { background:#F0FFF4; border-left-color:rgba(27,94,59,0.25); }
-  .card.con .insight { background:#FFFBF5; border-left-color:rgba(123,74,0,0.25); }
+  .section-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.18em; color:var(--gold); text-transform:uppercase; border-bottom:1px solid rgba(201,176,114,0.3); padding-bottom:var(--sp2); margin-bottom:var(--sp5); display:block; }
+
+  .article-tag { display:inline-block; font-family:'DM Mono',monospace; font-size:var(--fs-3); letter-spacing:0.1em; text-transform:uppercase; padding:var(--sp1) var(--sp2); border-radius:3px; margin-bottom:var(--sp2); background:rgba(0,14,92,0.06); color:var(--navy); }
+  .pol .article-tag { background:rgba(27,94,59,0.06); color:#1B5E3B; }
+  .con .article-tag { background:rgba(123,74,0,0.06); color:#7B4A00; }
+
+  .article-title { font-family:'Noto Serif KR',serif; font-size:18px; font-weight:500; line-height:1.5; margin-bottom:var(--sp3); color:#111827; display:block; transition:color var(--t-micro) var(--ease); }
+  .article-title:hover { color:var(--navy); cursor:pointer; }
+
+  .article-body { font-size:13px; color:#6B7280; line-height:1.85; margin-bottom:var(--sp3); font-weight:300; }
+
+  .article-insight { margin-bottom:var(--sp3); padding:var(--sp2) var(--sp3); border-left:2px solid var(--navy); background:rgba(0,14,92,0.03); border-radius:0 6px 6px 0; font-size:13px; color:#374151; line-height:1.85; }
+  .pol .article-insight { border-left-color:#1B5E3B; background:rgba(27,94,59,0.03); }
+  .con .article-insight { border-left-color:#7B4A00; background:rgba(123,74,0,0.03); }
   .i-label { font-family:'DM Mono',monospace; font-size:var(--fs-3); letter-spacing:0.1em; text-transform:uppercase; display:block; margin-bottom:var(--sp1); color:var(--navy); opacity:0.5; }
-  .card.pol .i-label { color:#1B5E3B; }
-  .card.con .i-label { color:#7B4A00; }
-  .sources { margin-top:var(--sp3); padding-top:var(--sp2); border-top:1px solid #EDE9E3; display:flex; flex-wrap:wrap; gap:var(--sp2); align-items:center; }
-  .src-label { font-family:'DM Mono',monospace; font-size:var(--fs-2); color:#C4BFB5; letter-spacing:0.1em; text-transform:uppercase; }
-  .src-link { font-size:var(--fs-4); color:var(--navy); text-decoration:none; opacity:0.55; border-bottom:1px solid rgba(201,176,114,0.55); padding-bottom:1px; transition:opacity var(--t-micro); }
+  .pol .i-label { color:#1B5E3B; }
+  .con .i-label { color:#7B4A00; }
+
+  .article-source { display:flex; flex-wrap:wrap; gap:var(--sp2); align-items:center; margin-top:var(--sp2); }
+  .src-label { font-family:'DM Mono',monospace; font-size:11px; color:#C4BFB5; letter-spacing:0.1em; text-transform:uppercase; }
+  .src-link { font-size:11px; color:var(--navy); text-decoration:none; opacity:0.55; border-bottom:1px solid rgba(201,176,114,0.55); padding-bottom:1px; transition:opacity var(--t-micro); }
   .src-link:hover { opacity:1; }
 
   /* ── Loading / empty states ──────────────────────────────────────────────── */
@@ -236,10 +237,11 @@
   .paper-result-info { font-family:'DM Mono',monospace; font-size:var(--fs-3); letter-spacing:0.1em; text-transform:uppercase; color:#bbb; margin-bottom:var(--sp3); min-height:var(--fs-3); }
 
   /* Paper items — grouped list, not card-per-item */
-  .paper-card { background:#fff; border:1px solid var(--border); border-bottom:none; padding:var(--sp4); position:relative; cursor:pointer; transition:background var(--t-micro),transform var(--t-std) var(--ease); text-decoration:none; display:block; color:inherit; }
-  .paper-card:last-of-type { border-bottom:1px solid var(--border); border-radius:0 0 8px 8px; }
-  .paper-card:first-of-type { border-radius:8px 8px 0 0; }
-  .paper-card:only-of-type { border-radius:8px; border-bottom:1px solid var(--border); }
+  .paper-card { background:#fff; border:1px solid var(--border); border-bottom:none; padding:var(--sp5) var(--sp5) var(--sp4); position:relative; cursor:pointer; transition:background var(--t-micro),transform var(--t-std) var(--ease); text-decoration:none; display:block; color:inherit; }
+  .paper-card:last-of-type { border-bottom:1px solid var(--border); border-radius:0 0 10px 10px; }
+  .paper-card:first-of-type { border-radius:10px 10px 0 0; }
+  .paper-card:only-of-type { border-radius:10px; border-bottom:1px solid var(--border); }
+  .paper-card + .paper-card { border-top:1px solid #f0ece4; }
   .paper-card:hover { background:var(--warm-subtle); transform:translateX(2px); z-index:1; }
   .paper-card:focus-visible { outline:2px solid var(--navy); outline-offset:-2px; z-index:1; }
   .paper-card-tags { display:flex; flex-wrap:wrap; gap:var(--sp1); margin-bottom:var(--sp2); }
@@ -248,7 +250,7 @@
   .paper-chip.year { background:rgba(0,0,0,0.04); color:#777; }
   .paper-chip.topic { background:rgba(123,74,0,0.06); color:#7B4A00; }
   .paper-chip.method { background:rgba(27,94,59,0.06); color:#1B5E3B; }
-  .paper-title-text { font-family:'Noto Serif KR',serif; font-size:var(--fs-5); font-weight:600; color:#111827; line-height:1.5; margin-bottom:var(--sp1); }
+  .paper-title-text { font-family:'Noto Serif KR',serif; font-size:18px; font-weight:500; color:#111827; line-height:1.5; margin-bottom:var(--sp1); }
   .paper-authors { font-family:'DM Mono',monospace; font-size:var(--fs-3); color:#aaa; margin-bottom:var(--sp2); }
   .paper-abstract { font-size:var(--fs-4); color:#6B7280; line-height:1.8; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
   .paper-keywords { margin-top:var(--sp2); display:flex; flex-wrap:wrap; gap:var(--sp1); }
@@ -291,7 +293,7 @@
   .firm-company-name { font-family:'Noto Serif KR',serif; font-size:var(--fs-6); font-weight:700; color:#111827; line-height:1.2; }
   .firm-company-sub { color:#aaa; font-size:var(--fs-4); margin-top:var(--sp1); font-family:'DM Mono',monospace; }
   .firm-company-meta { display:flex; gap:var(--sp2); flex-wrap:wrap; margin-top:var(--sp3); }
-  .firm-section-label { font-family:'DM Mono',monospace; font-size:var(--fs-3); letter-spacing:0.16em; text-transform:uppercase; color:var(--navy); opacity:0.48; margin-top:var(--sp5); margin-bottom:var(--sp2); display:block; }
+  .firm-section-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); border-bottom:1px solid rgba(201,176,114,0.3); padding-bottom:var(--sp2); margin-top:var(--sp5); margin-bottom:var(--sp3); display:block; }
   .firm-section-text { font-size:var(--fs-4); color:#555; line-height:1.85; }
   .firm-swot { display:grid; grid-template-columns:1fr 1fr; gap:var(--sp2); }
   @media (max-width:480px) { .firm-swot { grid-template-columns:1fr; } }
@@ -501,7 +503,7 @@
           window._cardData[cardId] = { ...c, tc };
           return cardHtml(cardId, c, tc, !!bms[cardId]);
         }).join('');
-        return `<div class="summary"><div class="sum-label">요약</div><div class="sum-text">${secData.summary||''}</div></div><div class="grid">${cards}</div>`;
+        return `<div class="summary"><div class="sum-label">요약</div><div class="sum-text">${secData.summary||''}</div></div><div class="news-list">${cards}</div>`;
       }
 
       function renderArchivePanel() {
@@ -546,7 +548,7 @@
     }).join('');
     document.getElementById('panel-' + id).innerHTML = `
       <div class="summary"><div class="sum-label">오늘의 요약</div><div class="sum-text">${data.summary||''}</div></div>
-      <div class="grid">${cards}</div>`;
+      <div class="news-list">${cards}</div>`;
   }
 
   function renderCharts(mc) {
@@ -755,8 +757,18 @@
   };
 
   function cardHtml(cardId, c, tc, isOn) {
-    const sources = (c.sources && c.sources.length) ? `<div class="sources"><span class="src-label">출처</span>${c.sources.map(s=>`<a class="src-link" href="${s.url||'#'}" target="_blank" rel="noopener">${s.title||'출처'}</a>`).join('')}</div>` : '';
-    return `<div class="card ${tc}"><div class="card-bar"></div><div class="card-inner">${bmBtn(cardId,isOn)}<span class="tag">${c.tag||''}</span><div class="headline">${c.headline||''}</div><div class="body-text">${c.body||''}</div>${c.insight?`<div class="insight"><span class="i-label">소비자학 관점</span>${c.insight}</div>`:''}${sources}</div></div>`;
+    const sources = (c.sources && c.sources.length)
+      ? `<div class="article-source"><span class="src-label">출처</span>${c.sources.map(s=>`<a class="src-link" href="${s.url||'#'}" target="_blank" rel="noopener">${s.title||'출처'}</a>`).join('')}</div>`
+      : '';
+    const tcClass = tc ? ` ${tc}` : '';
+    return `<div class="news-item${tcClass}">
+      ${bmBtn(cardId,isOn)}
+      <span class="article-tag">${c.tag||''}</span>
+      <div class="article-title">${c.headline||''}</div>
+      <div class="article-body">${c.body||''}</div>
+      ${c.insight?`<div class="article-insight"><span class="i-label">소비자학 관점</span>${c.insight}</div>`:''}
+      ${sources}
+    </div>`;
   }
 
   function updateBmBtn() {
@@ -906,7 +918,7 @@
       }
       const bms = getBookmarks();
       const cards = results.map(({ cardId, c, tc }) => cardHtml(cardId, c, tc, !!bms[cardId])).join('');
-      sp.innerHTML = `<div class="search-result-label">"${q}" 검색 결과 ${results.length}건</div><div class="grid">${cards}</div>`;
+      sp.innerHTML = `<div class="search-result-label">"${q}" 검색 결과 ${results.length}건</div><div class="news-list">${cards}</div>`;
     } catch {
       sp.innerHTML = '<div class="empty"><p>검색 중 오류가 발생했어요.</p></div>';
     }
