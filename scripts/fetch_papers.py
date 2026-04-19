@@ -136,72 +136,88 @@ def parse_record(record_elem) -> dict | None:
     return result
 
 
-def fetch_journal(max_pages: int = 200) -> list[dict]:
-    papers = []
-    seen_ids: set[str] = set()
-    total_count = 0
+def _api_call(params: dict, label: str) -> list:
+    """KCI API 호출 (3회 재시도). 성공 시 (records, total_count) 반환."""
+    for attempt in range(3):
+        try:
+            resp = requests.get(KCI_API_URL, params=params, timeout=30)
+            resp.raise_for_status()
+            root = ET.fromstring(resp.content)
+            total_el = root.find(".//result/total") or root.find(".//total")
+            total_count = int(total_el.text) if total_el is not None and total_el.text else 0
+            records = root.findall(".//record")
+            return records, total_count
+        except Exception as e:
+            print(f"  {label} 오류 (시도 {attempt+1}/3): {e}")
+            if attempt < 2:
+                time.sleep(2)
+    return [], 0
+
+
+def fetch_year(year: int, seen_ids: set, papers: list) -> int:
+    """특정 연도 논문을 페이지네이션으로 전량 수집. 추가된 건수 반환."""
+    added = 0
+    page = 1
     consecutive_empty = 0
 
-    for page in range(1, max_pages + 1):
+    while True:
         params = {
             "key": KCI_API_KEY,
             "apiCode": "articleSearch",
             "journal": JOURNAL_NAME,
+            "startYear": year,
+            "endYear": year,
             "page": page,
             "displayCount": 10,
         }
-
-        retries = 3
-        records = []
-        for attempt in range(retries):
-            try:
-                resp = requests.get(KCI_API_URL, params=params, timeout=30)
-                resp.raise_for_status()
-                root = ET.fromstring(resp.content)
-
-                total_el = root.find(".//result/total") or root.find(".//total")
-                if total_el is not None and total_el.text:
-                    total_count = int(total_el.text)
-
-                records = root.findall(".//record")
-                break
-            except requests.HTTPError as e:
-                print(f"  p{page} HTTP 오류 (시도 {attempt+1}/{retries}): {e.response.status_code}")
-                if attempt < retries - 1:
-                    time.sleep(2)
-            except Exception as e:
-                print(f"  p{page} 오류 (시도 {attempt+1}/{retries}): {e}")
-                if attempt < retries - 1:
-                    time.sleep(2)
+        records, total_count = _api_call(params, f"{year} p{page}")
 
         if not records:
             consecutive_empty += 1
-            result_msg = ""
-            try:
-                result_msg = _elem_text(root.find(".//resultMsg"))
-            except Exception:
-                pass
-            print(f"  p{page}: 결과 없음 ({result_msg or 'no records'}), 연속 빈 페이지: {consecutive_empty}")
             if consecutive_empty >= 3:
-                print("  연속 3페이지 빈 결과 → 수집 종료")
                 break
+            page += 1
+            time.sleep(0.3)
             continue
 
         consecutive_empty = 0
-        new_count = 0
         for rec in records:
             parsed = parse_record(rec)
             if parsed and parsed["id"] not in seen_ids:
                 seen_ids.add(parsed["id"])
                 papers.append(parsed)
-                new_count += 1
+                added += 1
 
-        print(f"  p{page}: +{new_count}건 (누적 {len(papers)}/{total_count})")
-
-        if total_count > 0 and len(papers) >= total_count:
-            print("  전체 수집 완료")
+        if total_count > 0 and added >= total_count:
             break
-        time.sleep(0.5)
+        page += 1
+        time.sleep(0.3)
+
+    return added
+
+
+def fetch_journal() -> list[dict]:
+    papers = []
+    seen_ids: set[str] = set()
+
+    # 전체 총 건수 확인 (연도 필터 없이 첫 페이지만)
+    _, grand_total = _api_call({
+        "key": KCI_API_KEY,
+        "apiCode": "articleSearch",
+        "journal": JOURNAL_NAME,
+        "page": 1,
+        "displayCount": 10,
+    }, "총계 조회")
+    print(f"  API 전체 총 건수: {grand_total}건\n")
+
+    current_year = datetime.now(KST).year
+    # 소비자학연구 창간: 1990년
+    for year in range(current_year, 1989, -1):
+        before = len(papers)
+        added = fetch_year(year, seen_ids, papers)
+        if added > 0:
+            print(f"  {year}년: +{added}건 (누적 {len(papers)}/{grand_total})")
+        time.sleep(0.2)
 
     return papers
 
