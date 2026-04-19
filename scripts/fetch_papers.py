@@ -136,9 +136,11 @@ def parse_record(record_elem) -> dict | None:
     return result
 
 
-def fetch_journal(max_pages: int = 20) -> list[dict]:
+def fetch_journal(max_pages: int = 200) -> list[dict]:
     papers = []
     seen_ids: set[str] = set()
+    total_count = 0
+    consecutive_empty = 0
 
     for page in range(1, max_pages + 1):
         params = {
@@ -146,42 +148,60 @@ def fetch_journal(max_pages: int = 20) -> list[dict]:
             "apiCode": "articleSearch",
             "journal": JOURNAL_NAME,
             "page": page,
-            "displayCount": 100,
+            "displayCount": 10,
         }
-        try:
-            resp = requests.get(KCI_API_URL, params=params, timeout=30)
-            resp.raise_for_status()
-            root = ET.fromstring(resp.content)
 
-            total_el = root.find(".//result/total") or root.find(".//total")
-            total_count = int(total_el.text) if total_el is not None and total_el.text else 0
+        retries = 3
+        records = []
+        for attempt in range(retries):
+            try:
+                resp = requests.get(KCI_API_URL, params=params, timeout=30)
+                resp.raise_for_status()
+                root = ET.fromstring(resp.content)
 
-            records = root.findall(".//record")
-            if not records:
+                total_el = root.find(".//result/total") or root.find(".//total")
+                if total_el is not None and total_el.text:
+                    total_count = int(total_el.text)
+
+                records = root.findall(".//record")
+                break
+            except requests.HTTPError as e:
+                print(f"  p{page} HTTP 오류 (시도 {attempt+1}/{retries}): {e.response.status_code}")
+                if attempt < retries - 1:
+                    time.sleep(2)
+            except Exception as e:
+                print(f"  p{page} 오류 (시도 {attempt+1}/{retries}): {e}")
+                if attempt < retries - 1:
+                    time.sleep(2)
+
+        if not records:
+            consecutive_empty += 1
+            result_msg = ""
+            try:
                 result_msg = _elem_text(root.find(".//resultMsg"))
-                print(f"  p{page}: 결과 없음 ({result_msg or 'no records'})")
+            except Exception:
+                pass
+            print(f"  p{page}: 결과 없음 ({result_msg or 'no records'}), 연속 빈 페이지: {consecutive_empty}")
+            if consecutive_empty >= 3:
+                print("  연속 3페이지 빈 결과 → 수집 종료")
                 break
+            continue
 
-            new_count = 0
-            for rec in records:
-                parsed = parse_record(rec)
-                if parsed and parsed["id"] not in seen_ids:
-                    seen_ids.add(parsed["id"])
-                    papers.append(parsed)
-                    new_count += 1
+        consecutive_empty = 0
+        new_count = 0
+        for rec in records:
+            parsed = parse_record(rec)
+            if parsed and parsed["id"] not in seen_ids:
+                seen_ids.add(parsed["id"])
+                papers.append(parsed)
+                new_count += 1
 
-            print(f"  p{page}: +{new_count}건 (누적 {len(papers)}/{total_count})")
+        print(f"  p{page}: +{new_count}건 (누적 {len(papers)}/{total_count})")
 
-            if len(papers) >= total_count or len(records) == 0:
-                break
-            time.sleep(0.5)
-
-        except requests.HTTPError as e:
-            print(f"  HTTP 오류: {e.response.status_code}")
+        if total_count > 0 and len(papers) >= total_count:
+            print("  전체 수집 완료")
             break
-        except Exception as e:
-            print(f"  오류: {e}")
-            break
+        time.sleep(0.5)
 
     return papers
 
