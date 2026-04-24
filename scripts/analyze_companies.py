@@ -95,16 +95,41 @@ def main():
                 "recent_issues": [],
             })
 
+    today = datetime.now(KST).strftime("%Y-%m-%d")
     output = {
         "updated_at": datetime.now(KST).isoformat(),
+        "date": today,
         "industries": list(industry_map.values()),
     }
 
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
+    print(f"완료: docs/companies.json 저장됨")
 
-    print(f"\n완료: docs/companies.json 저장됨")
+    # 아카이브 저장
+    archive_dir = os.path.join(os.path.dirname(OUTPUT_PATH), "companies-archive")
+    os.makedirs(archive_dir, exist_ok=True)
+
+    archive_path = os.path.join(archive_dir, f"{today}.json")
+    with open(archive_path, "w", encoding="utf-8") as f:
+        json.dump(output, f, ensure_ascii=False, indent=2)
+    print(f"아카이브 저장됨: companies-archive/{today}.json")
+
+    # 아카이브 인덱스 업데이트
+    index_path = os.path.join(archive_dir, "index.json")
+    if os.path.exists(index_path):
+        with open(index_path, encoding="utf-8") as f:
+            index = json.load(f)
+        dates = index.get("dates", [])
+    else:
+        dates = []
+    if today not in dates:
+        dates.append(today)
+        dates.sort()
+    with open(index_path, "w", encoding="utf-8") as f:
+        json.dump({"dates": dates}, f, ensure_ascii=False)
+    print(f"인덱스 업데이트됨: {len(dates)}개 항목")
 
 
 if __name__ == "__main__":

@@ -805,12 +805,19 @@
       </div>
       <div class="sp-sec" id="sp-arch-sec">
         <div class="sp-sec-hd">
-          <span class="sp-sec-title">아카이브</span>
+          <span class="sp-sec-title">브리핑 아카이브</span>
+        </div>
+        <div class="sp-empty">불러오는 중...</div>
+      </div>
+      <div class="sp-sec" id="sp-firm-arch-sec">
+        <div class="sp-sec-hd">
+          <span class="sp-sec-title">기업 분석 아카이브</span>
         </div>
         <div class="sp-empty">불러오는 중...</div>
       </div>`;
 
     renderSidePanelArchive();
+    renderSidePanelFirmArchive();
   }
 
   async function renderSidePanelArchive() {
@@ -842,6 +849,107 @@
       if (empty) empty.textContent = '아카이브를 불러오지 못했어요';
     }
   }
+
+  async function renderSidePanelFirmArchive() {
+    const sec = document.getElementById('sp-firm-arch-sec');
+    if (!sec) return;
+    try {
+      const res = await fetch('companies-archive/index.json?t=' + Date.now());
+      if (!res.ok) throw new Error();
+      const { dates } = await res.json();
+      const sorted = [...dates].sort((a, b) => b.localeCompare(a));
+      if (!sorted.length) {
+        sec.querySelector('.sp-empty').textContent = '저장된 분석이 없어요';
+        return;
+      }
+      const items = sorted.map(d => {
+        const [y, m, day] = d.split('-');
+        const weekday = new Date(d).toLocaleDateString('ko-KR', { weekday: 'short' });
+        return `<div class="arch-sp-item" onclick="openFirmArchiveFromPanel('${d}')">
+          <div class="arch-sp-date">${m}월 ${parseInt(day)}일 (${weekday})</div>
+          <div class="arch-sp-sub">${y} · 기업 분석 보기 →</div>
+        </div>`;
+      }).join('');
+      const hd = sec.querySelector('.sp-sec-hd');
+      hd.innerHTML = `<span class="sp-sec-title">기업 분석 아카이브</span><span class="sp-sec-count">${sorted.length}개</span>`;
+      hd.insertAdjacentHTML('afterend', items);
+      sec.querySelector('.sp-empty')?.remove();
+    } catch {
+      const empty = sec.querySelector('.sp-empty');
+      if (empty) empty.textContent = '아카이브를 불러오지 못했어요';
+    }
+  }
+
+  window.openFirmArchiveFromPanel = function(date) {
+    closeSidePanel();
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+    document.getElementById('tab-firm').classList.add('on');
+    document.getElementById('panel-firm').classList.add('on');
+    loadFirmArchiveDate(date);
+  };
+
+  async function loadFirmArchiveDate(date) {
+    const container = document.getElementById('firm-content');
+    if (!container) return;
+    container.innerHTML = '<div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div>';
+    try {
+      const res = await fetch('companies-archive/' + date + '.json?t=' + Date.now());
+      if (!res.ok) throw new Error();
+      const data = JSON.parse(await res.text());
+      const [y, m, d] = date.split('-');
+      const weekday = new Date(date).toLocaleDateString('ko-KR', { weekday: 'long' });
+
+      // 아카이브 뷰에서는 activeIndustry를 첫 번째로 설정
+      let archIndustry = (data.industries && data.industries[0]) ? data.industries[0].id : null;
+
+      function renderArchFirmPanel() {
+        if (!data.industries || !data.industries.length) {
+          container.innerHTML = '<div class="empty"><p>데이터가 없어요.</p></div>';
+          return;
+        }
+        const tabs = data.industries.map(function(ind) {
+          return '<button class="firm-industry-tab' + (ind.id === archIndustry ? ' on' : '') + '" onclick="switchArchFirmIndustry(\'' + ind.id + '\')">' + ind.name + '</button>';
+        }).join('');
+        const activeInd = data.industries.find(function(i) { return i.id === archIndustry; });
+        const bms = getBookmarks();
+        const cards = (activeInd ? activeInd.companies || [] : []).map(function(c) {
+          const cardId = 'firm-arch-' + date + '-' + (c.id || c.name);
+          window._cardData[cardId] = { tag: activeInd.name, headline: c.name_ko || c.name, type: 'company', company: c };
+          return renderFirmCard(c, cardId, !!bms[cardId]);
+        }).join('');
+
+        container.innerHTML =
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp4);flex-wrap:wrap;gap:var(--sp2)">' +
+            '<div style="font-family:\'Noto Serif KR\',serif;font-size:var(--fs-6);font-weight:600;color:#111827">' +
+              m + '월 ' + parseInt(d) + '일 (' + weekday + ') 기업 분석' +
+            '</div>' +
+            '<button class="arch-back" onclick="returnToCurrentFirm()">← 최신으로 돌아가기</button>' +
+          '</div>' +
+          '<div class="firm-industry-tabs">' + tabs + '</div>' +
+          (cards || '<div class="empty"><p>기업 데이터가 없어요.</p></div>') +
+          '<div class="update-bar">기업 분석 기준일: ' + date + '</div>';
+      }
+
+      window.switchArchFirmIndustry = function(id) {
+        archIndustry = id;
+        renderArchFirmPanel();
+      };
+
+      renderArchFirmPanel();
+    } catch {
+      container.innerHTML = '<div class="empty"><p>기업 분석을 불러오지 못했어요.</p></div>';
+    }
+  }
+
+  window.returnToCurrentFirm = function() {
+    if (_companiesLoaded && _companiesData) {
+      _activeIndustry = null;
+      renderCompanyPanel();
+    } else {
+      ensureCompaniesLoaded();
+    }
+  };
 
   window.toggleSidePanel = function() {
     const panel = document.getElementById('side-panel');
