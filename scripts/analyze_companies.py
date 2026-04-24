@@ -102,10 +102,27 @@ def main():
         "industries": list(industry_map.values()),
     }
 
+    # 실제 분석이 하나라도 성공했는지 확인
+    all_companies = [c for ind in output["industries"] for c in ind["companies"]]
+    has_valid = any(
+        c.get("overview") and c["overview"] != "분석 데이터를 불러올 수 없습니다."
+        for c in all_companies
+    )
+
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
-    print(f"완료: docs/companies.json 저장됨")
+
+    if has_valid:
+        with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
+            json.dump(output, f, ensure_ascii=False, indent=2)
+        print(f"완료: docs/companies.json 저장됨")
+    else:
+        print("경고: 모든 기업 분석이 실패했습니다. 기존 companies.json 유지.")
+        # 기존 파일이 없을 때만 저장 (최초 실행 시 빈 파일보다는 오류 데이터라도)
+        if not os.path.exists(OUTPUT_PATH):
+            with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
+                json.dump(output, f, ensure_ascii=False, indent=2)
+            print("  (기존 파일 없어 저장)")
+        return
 
     # 아카이브 저장
     archive_dir = os.path.join(os.path.dirname(OUTPUT_PATH), "companies-archive")
