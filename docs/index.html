@@ -289,8 +289,8 @@
   .firm-industry-tab.on { background:var(--navy); color:#FAF8F5; border-color:var(--navy); box-shadow:var(--sh-sm); }
   .firm-industry-tab:hover:not(.on) { border-color:rgba(0,14,92,0.18); color:var(--navy); background:var(--warm-mid); }
   .firm-industry-tab:focus-visible { outline:2px solid var(--navy); outline-offset:2px; }
-  .firm-company-card { background:#fff; border-radius:10px; border:1px solid var(--border); padding:var(--sp5); margin-bottom:var(--sp4); box-shadow:var(--sh-xs); }
-  .firm-company-name { font-family:'Noto Serif KR',serif; font-size:var(--fs-6); font-weight:700; color:#111827; line-height:1.2; }
+  .firm-company-card { background:#fff; border-radius:10px; border:1px solid var(--border); padding:var(--sp5); margin-bottom:var(--sp4); box-shadow:var(--sh-xs); position:relative; }
+  .firm-company-name { font-family:'Noto Serif KR',serif; font-size:var(--fs-6); font-weight:700; color:#111827; line-height:1.2; padding-right:var(--sp5); }
   .firm-company-sub { color:#aaa; font-size:var(--fs-4); margin-top:var(--sp1); font-family:'DM Mono',monospace; }
   .firm-company-meta { display:flex; gap:var(--sp2); flex-wrap:wrap; margin-top:var(--sp3); }
   .firm-section-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); border-bottom:1px solid rgba(201,176,114,0.3); padding-bottom:var(--sp2); margin-top:var(--sp5); margin-bottom:var(--sp3); display:block; }
@@ -315,6 +315,10 @@
   .firm-issue-title { font-family:'Noto Serif KR',serif; font-size:var(--fs-4); font-weight:600; color:#111827; margin-bottom:var(--sp1); }
   .firm-issue-content { font-size:var(--fs-4); color:#6B7280; line-height:1.8; }
   .firm-updated { text-align:right; margin-top:var(--sp4); font-family:'DM Mono',monospace; font-size:var(--fs-3); color:#ccc; }
+
+  /* ── Weekly update badge ─────────────────────────────────────────────────── */
+  .weekly-badge { display:inline-flex; align-items:center; gap:var(--sp1); font-family:'DM Mono',monospace; font-size:var(--fs-3); letter-spacing:0.1em; text-transform:uppercase; color:#aaa; background:var(--warm-subtle); border:1px solid var(--border); border-radius:4px; padding:var(--sp1) var(--sp2); margin-bottom:var(--sp4); }
+  .weekly-badge svg { flex-shrink:0; }
 
   /* ── Responsive ──────────────────────────────────────────────────────────── */
   @media (max-width:720px) {
@@ -400,6 +404,7 @@
   <div class="panel" id="panel-pol"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
   <div class="panel" id="panel-con"><div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div></div>
   <div class="panel" id="panel-paper">
+    <span id="paper-weekly-badge" class="weekly-badge" style="display:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>매주 월요일 업데이트</span>
     <div class="paper-top-bar">
       <div class="paper-search-wrap">
         <input class="paper-search-input" id="paper-search-input"
@@ -994,6 +999,9 @@
       const info = document.getElementById('paper-result-info');
       if (info) info.dataset.updatedAt = (data.updated_at || '').slice(0, 10);
 
+      const paperBadgeWrap = document.getElementById('paper-weekly-badge');
+      if (paperBadgeWrap) paperBadgeWrap.style.display = '';
+
       filterAndRenderPapers();
     } catch {
       const list2 = document.getElementById('paper-list');
@@ -1127,6 +1135,8 @@
   // ── 기업 분석 탭 ─────────────────────────────────────────────────────────────
   let _companiesLoaded = false, _companiesData = null, _activeIndustry = null;
 
+  const WEEKLY_BADGE = `<span class="weekly-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>매주 월요일 업데이트</span>`;
+
   async function ensureCompaniesLoaded() {
     if (_companiesLoaded) { renderCompanyPanel(); return; }
     const container = document.getElementById('firm-content');
@@ -1134,11 +1144,12 @@
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>기업 분석 불러오는 중...</p></div>';
     try {
       const res = await fetch('companies.json?t=' + Date.now());
-      if (!res.ok) throw new Error();
-      _companiesData = await res.json();
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      _companiesData = JSON.parse(text);
       _companiesLoaded = true;
       renderCompanyPanel();
-    } catch {
+    } catch(e) {
       container.innerHTML = '<div class="empty"><p>기업 분석 데이터를 불러오지 못했어요.<br><small style="font-family:\'DM Mono\',monospace;font-size:11px;color:#bbb">python scripts/analyze_companies.py 실행 후 재시도</small></p></div>';
     }
   }
@@ -1146,21 +1157,30 @@
   function renderCompanyPanel() {
     const data = _companiesData;
     const container = document.getElementById('firm-content');
-    if (!data || !data.industries || !data.industries.length || !container) return;
+    if (!container) return;
+    if (!data || !data.industries || !data.industries.length) {
+      container.innerHTML = '<div class="empty"><p>기업 데이터가 없어요.</p></div>';
+      return;
+    }
     if (!_activeIndustry) _activeIndustry = data.industries[0].id;
 
-    const tabs = data.industries.map(ind =>
-      `<button class="firm-industry-tab${ind.id === _activeIndustry ? ' on' : ''}" onclick="switchFirmIndustry('${ind.id}')">${ind.name}</button>`
-    ).join('');
+    const tabs = data.industries.map(function(ind) {
+      return '<button class="firm-industry-tab' + (ind.id === _activeIndustry ? ' on' : '') + '" onclick="switchFirmIndustry(\'' + ind.id + '\')">' + ind.name + '</button>';
+    }).join('');
 
-    const activeInd = data.industries.find(i => i.id === _activeIndustry);
-    const cards = (activeInd?.companies || []).map(renderFirmCard).join('');
+    const activeInd = data.industries.find(function(i) { return i.id === _activeIndustry; });
+    const bms = getBookmarks();
+    const cards = (activeInd ? activeInd.companies || [] : []).map(function(c) {
+      const cardId = 'firm-' + _activeIndustry + '-' + (c.id || c.name);
+      window._cardData[cardId] = { tag: activeInd.name, headline: c.name_ko || c.name, type: 'company', company: c };
+      return renderFirmCard(c, cardId, !!bms[cardId]);
+    }).join('');
     const upd = data.updated_at ? data.updated_at.slice(0, 10) : '';
 
-    container.innerHTML = `
-      <div class="firm-industry-tabs">${tabs}</div>
-      ${cards || '<div class="empty"><p>기업 데이터가 없어요.</p></div>'}
-      ${upd ? `<div class="update-bar">기업 분석 기준일: ${upd}</div>` : ''}`;
+    container.innerHTML = WEEKLY_BADGE +
+      '<div class="firm-industry-tabs">' + tabs + '</div>' +
+      (cards || '<div class="empty"><p>기업 데이터가 없어요.</p></div>') +
+      (upd ? '<div class="update-bar">기업 분석 기준일: ' + upd + '</div>' : '');
   }
 
   window.switchFirmIndustry = function(id) {
@@ -1168,29 +1188,38 @@
     renderCompanyPanel();
   };
 
-  function renderFirmCard(c) {
+  function renderFirmCard(c, cardId, isOn) {
     const swot = c.swot || {};
-    const swotHtml = `<div class="firm-swot">
-      <div class="firm-swot-item s"><div class="firm-swot-label">Strengths · 강점</div><ul class="firm-swot-list">${(swot.strengths||[]).map(s=>`<li>${s}</li>`).join('')}</ul></div>
-      <div class="firm-swot-item w"><div class="firm-swot-label">Weaknesses · 약점</div><ul class="firm-swot-list">${(swot.weaknesses||[]).map(s=>`<li>${s}</li>`).join('')}</ul></div>
-      <div class="firm-swot-item o"><div class="firm-swot-label">Opportunities · 기회</div><ul class="firm-swot-list">${(swot.opportunities||[]).map(s=>`<li>${s}</li>`).join('')}</ul></div>
-      <div class="firm-swot-item t"><div class="firm-swot-label">Threats · 위협</div><ul class="firm-swot-list">${(swot.threats||[]).map(s=>`<li>${s}</li>`).join('')}</ul></div>
-    </div>`;
-    const issues = (c.recent_issues||[]).map(issue =>
-      `<div class="firm-issue-item"><div class="firm-issue-title">${issue.title}</div><div class="firm-issue-content">${issue.content}</div></div>`
-    ).join('');
-    const meta = [c.ticker && `<span class="paper-chip year">${c.ticker}</span>`, c.country && `<span class="paper-chip journal">${c.country}</span>`].filter(Boolean).join('');
-    return `<div class="firm-company-card">
-      <div class="firm-company-name">${c.name_ko||c.name}</div>
-      <div class="firm-company-sub">${c.name}</div>
-      <div class="firm-company-meta">${meta}</div>
-      ${c.overview ? `<span class="firm-section-label">기업 개요</span><div class="firm-section-text">${c.overview}</div>` : ''}
-      <span class="firm-section-label" style="margin-top:22px">SWOT 분석</span>
-      ${swotHtml}
-      ${c.consumer_strategy ? `<span class="firm-section-label">소비자 전략</span><div class="firm-section-text">${c.consumer_strategy}</div>` : ''}
-      ${issues ? `<span class="firm-section-label">최근 이슈</span><div class="firm-issues">${issues}</div>` : ''}
-      <div class="firm-updated">기준일: ${c.updated_at||''}</div>
-    </div>`;
+    const strengths  = (swot.strengths     || []).map(function(s) { return '<li>' + s + '</li>'; }).join('');
+    const weaknesses = (swot.weaknesses    || []).map(function(s) { return '<li>' + s + '</li>'; }).join('');
+    const opps       = (swot.opportunities || []).map(function(s) { return '<li>' + s + '</li>'; }).join('');
+    const threats    = (swot.threats       || []).map(function(s) { return '<li>' + s + '</li>'; }).join('');
+    const swotHtml = '<div class="firm-swot">' +
+      '<div class="firm-swot-item s"><div class="firm-swot-label">Strengths · 강점</div><ul class="firm-swot-list">' + strengths + '</ul></div>' +
+      '<div class="firm-swot-item w"><div class="firm-swot-label">Weaknesses · 약점</div><ul class="firm-swot-list">' + weaknesses + '</ul></div>' +
+      '<div class="firm-swot-item o"><div class="firm-swot-label">Opportunities · 기회</div><ul class="firm-swot-list">' + opps + '</ul></div>' +
+      '<div class="firm-swot-item t"><div class="firm-swot-label">Threats · 위협</div><ul class="firm-swot-list">' + threats + '</ul></div>' +
+      '</div>';
+    const issues = (c.recent_issues || []).map(function(issue) {
+      return '<div class="firm-issue-item"><div class="firm-issue-title">' + (issue.title || '') + '</div><div class="firm-issue-content">' + (issue.content || '') + '</div></div>';
+    }).join('');
+    const metaParts = [];
+    if (c.ticker)  metaParts.push('<span class="paper-chip year">'    + c.ticker  + '</span>');
+    if (c.country) metaParts.push('<span class="paper-chip journal">' + c.country + '</span>');
+    const meta = metaParts.join('');
+    const bm = bmBtn(cardId, isOn);
+    return '<div class="firm-company-card">' +
+      bm +
+      '<div class="firm-company-name">' + (c.name_ko || c.name || '') + '</div>' +
+      '<div class="firm-company-sub">'  + (c.name || '')               + '</div>' +
+      '<div class="firm-company-meta">' + meta                          + '</div>' +
+      (c.overview ? '<span class="firm-section-label">기업 개요</span><div class="firm-section-text">' + c.overview + '</div>' : '') +
+      '<span class="firm-section-label" style="margin-top:22px">SWOT 분석</span>' +
+      swotHtml +
+      (c.consumer_strategy ? '<span class="firm-section-label">소비자 전략</span><div class="firm-section-text">' + c.consumer_strategy + '</div>' : '') +
+      (issues ? '<span class="firm-section-label">최근 이슈</span><div class="firm-issues">' + issues + '</div>' : '') +
+      '<div class="firm-updated">기준일: ' + (c.updated_at || '') + '</div>' +
+      '</div>';
   }
 
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
