@@ -2,7 +2,7 @@ name: 소비자 데일리 브리핑 생성
 
 on:
   schedule:
-    - cron: "0 22 * * *"
+    - cron: "0 21 * * *"
   workflow_dispatch:
 
 jobs:

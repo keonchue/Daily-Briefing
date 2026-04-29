@@ -2,7 +2,7 @@ name: 기업 분석 자동 생성
 
 on:
   schedule:
-    - cron: "0 2 * * 1"   # 매주 월요일 한국시간 11:00 (UTC 02:00)
+    - cron: "0 0 * * 1"   # 매주 월요일 한국시간 09:00 (UTC 00:00)
   workflow_dispatch:
 
 jobs:

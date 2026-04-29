@@ -189,6 +189,12 @@
   .sp-sec-hd { padding:var(--sp3) var(--sp4) var(--sp2); display:flex; justify-content:space-between; align-items:center; }
   .sp-sec-title { font-family:'DM Mono',monospace; font-size:var(--fs-3); letter-spacing:0.14em; text-transform:uppercase; color:var(--navy); }
   .sp-sec-count { font-family:'DM Mono',monospace; font-size:var(--fs-3); color:#bbb; }
+  .sp-sec-hd.accordion { cursor:pointer; user-select:none; }
+  .sp-sec-hd.accordion:hover { background:rgba(0,0,0,0.03); }
+  .sp-sec-chevron { font-size:10px; color:#bbb; transition:transform 0.2s ease; display:inline-block; margin-left:auto; }
+  .sp-sec.open .sp-sec-chevron { transform:rotate(180deg); }
+  .sp-sec-body { display:none; }
+  .sp-sec.open .sp-sec-body { display:block; }
   .sp-empty { padding:var(--sp4) var(--sp4) var(--sp5); color:#bbb; font-size:var(--fs-4); line-height:1.7; }
   .bm-item { display:flex; align-items:flex-start; gap:var(--sp2); padding:var(--sp2) var(--sp4); cursor:default; transition:background var(--t-micro); }
   .bm-item:hover { background:#F0EDE8; }
@@ -781,6 +787,10 @@
     if (btn) btn.classList.toggle('active', Object.keys(getBookmarks()).length > 0);
   }
 
+  function toggleSpSec(id) {
+    document.getElementById(id).classList.toggle('open');
+  }
+
   function renderSidePanel() {
     const body = document.getElementById('sp-body');
     const entries = Object.entries(getBookmarks());
@@ -804,16 +814,22 @@
         ${bmHtml}
       </div>
       <div class="sp-sec" id="sp-arch-sec">
-        <div class="sp-sec-hd">
+        <div class="sp-sec-hd accordion" onclick="toggleSpSec('sp-arch-sec')">
           <span class="sp-sec-title">브리핑 아카이브</span>
+          <span class="sp-sec-chevron">▼</span>
         </div>
-        <div class="sp-empty">불러오는 중...</div>
+        <div class="sp-sec-body">
+          <div class="sp-empty">불러오는 중...</div>
+        </div>
       </div>
       <div class="sp-sec" id="sp-firm-arch-sec">
-        <div class="sp-sec-hd">
+        <div class="sp-sec-hd accordion" onclick="toggleSpSec('sp-firm-arch-sec')">
           <span class="sp-sec-title">기업 분석 아카이브</span>
+          <span class="sp-sec-chevron">▼</span>
         </div>
-        <div class="sp-empty">불러오는 중...</div>
+        <div class="sp-sec-body">
+          <div class="sp-empty">불러오는 중...</div>
+        </div>
       </div>`;
 
     renderSidePanelArchive();
@@ -841,9 +857,9 @@
         </div>`;
       }).join('');
       const hd = sec.querySelector('.sp-sec-hd');
-      hd.innerHTML = `<span class="sp-sec-title">아카이브</span><span class="sp-sec-count">${sorted.length}개</span>`;
-      hd.insertAdjacentHTML('afterend', items);
-      sec.querySelector('.sp-empty')?.remove();
+      hd.innerHTML = `<span class="sp-sec-title">브리핑 아카이브</span><span class="sp-sec-count">${sorted.length}개</span><span class="sp-sec-chevron">▼</span>`;
+      const body = sec.querySelector('.sp-sec-body');
+      body.innerHTML = items;
     } catch {
       const empty = sec.querySelector('.sp-empty');
       if (empty) empty.textContent = '아카이브를 불러오지 못했어요';
@@ -871,9 +887,9 @@
         </div>`;
       }).join('');
       const hd = sec.querySelector('.sp-sec-hd');
-      hd.innerHTML = `<span class="sp-sec-title">기업 분석 아카이브</span><span class="sp-sec-count">${sorted.length}개</span>`;
-      hd.insertAdjacentHTML('afterend', items);
-      sec.querySelector('.sp-empty')?.remove();
+      hd.innerHTML = `<span class="sp-sec-title">기업 분석 아카이브</span><span class="sp-sec-count">${sorted.length}개</span><span class="sp-sec-chevron">▼</span>`;
+      const body = sec.querySelector('.sp-sec-body');
+      body.innerHTML = items;
     } catch {
       const empty = sec.querySelector('.sp-empty');
       if (empty) empty.textContent = '아카이브를 불러오지 못했어요';

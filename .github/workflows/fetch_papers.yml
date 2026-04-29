@@ -5,7 +5,7 @@ name: KCI 소비자 논문 수집
 # workflow_dispatch로 직접 실행하세요.
 on:
   schedule:
-    - cron: "0 1 * * 1"   # 매주 월요일 한국시간 10:00 (UTC 01:00)
+    - cron: "0 0 * * 1"   # 매주 월요일 한국시간 09:00 (UTC 00:00)
   workflow_dispatch:
 
 jobs:
