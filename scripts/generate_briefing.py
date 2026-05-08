@@ -19,8 +19,20 @@ NAVER_KEYWORDS = {
 }
 
 
-def fetch_naver_news(query, display=10):
-    """네이버 뉴스 검색 API로 최신순 기사 수집"""
+def parse_pub_date(pub_date_str):
+    """네이버 API pubDate(RFC 2822) → datetime 변환"""
+    try:
+        from email.utils import parsedate_to_datetime
+        return parsedate_to_datetime(pub_date_str)
+    except Exception:
+        return None
+
+
+CUTOFF_HOURS = 30
+
+
+def fetch_naver_news(query, display=30):
+    """네이버 뉴스 검색 API로 최근 30시간 이내 기사 수집"""
     try:
         params = urlencode({"query": query, "display": display, "sort": "date"})
         url = f"https://openapi.naver.com/v1/search/news.json?{params}"
@@ -30,8 +42,12 @@ def fetch_naver_news(query, display=10):
         })
         with urllib.request.urlopen(req, timeout=10) as res:
             data = json.loads(res.read())
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=CUTOFF_HOURS)
         items = []
         for item in data.get("items", []):
+            pub_dt = parse_pub_date(item.get("pubDate", ""))
+            if pub_dt and pub_dt < cutoff:
+                continue
             title = re.sub(r'<[^>]+>|&[a-z]+;|&#\d+;', '', item.get("title", "")).strip()
             desc = re.sub(r'<[^>]+>|&[a-z]+;|&#\d+;', '', item.get("description", "")).strip()[:150]
             link = item.get("link") or item.get("originallink", "")
@@ -43,19 +59,19 @@ def fetch_naver_news(query, display=10):
                 source_name = query
             if title:
                 items.append({"title": title, "url": link, "desc": desc, "source": source_name})
-        print(f"     v [{query}]: {len(items)}건")
+        print(f"     v [{query}]: {len(items)}건 (최근 {CUTOFF_HOURS}시간)")
         return items
     except Exception as e:
         print(f"     x [{query}] 실패: {e}")
         return []
 
 
-def fetch_section_naver(section, limit=6):
+def fetch_section_naver(section, limit=10):
     """키워드별 수집 후 URL 기준 중복 제거, 상위 limit건 반환"""
     seen = set()
     news = []
     for kw in NAVER_KEYWORDS[section]:
-        for item in fetch_naver_news(kw, display=10):
+        for item in fetch_naver_news(kw, display=30):
             key = item["url"] or item["title"]
             if key not in seen:
                 seen.add(key)
@@ -114,7 +130,7 @@ def fetch_consumer_naver():
     seen = set()
     news = []
     for kw in NAVER_KEYWORDS["consumer"]:
-        for item in fetch_naver_news(kw, display=10):
+        for item in fetch_naver_news(kw, display=30):
             key = item["url"] or item["title"]
             if key not in seen:
                 seen.add(key)

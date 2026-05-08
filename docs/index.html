@@ -271,6 +271,14 @@
   .arch-detail-tab:hover { color:var(--text); }
   .arch-detail-tab.on { color:var(--navy); border-bottom-color:var(--gold); font-weight:500; }
 
+  /* ── Archive Nav (prev/next) ────────────────────────────────────────────── */
+  .arch-nav { display:flex; align-items:center; justify-content:space-between; gap:var(--sp2); margin-bottom:var(--sp3); }
+  .arch-nav-btn { display:inline-flex; align-items:center; gap:var(--sp1); font-size:var(--fs-4); color:var(--navy); border:1px solid var(--border); border-radius:6px; padding:var(--sp2) var(--sp3); background:var(--surface); cursor:pointer; font-family:'Noto Sans KR',sans-serif; transition:background var(--t-micro),box-shadow var(--t-micro); min-height:44px; white-space:nowrap; }
+  .arch-nav-btn:hover:not(:disabled) { background:var(--surface2); box-shadow:var(--sh-xs); }
+  .arch-nav-btn:disabled { opacity:.3; cursor:default; }
+  .arch-nav-center { font-family:'Noto Serif KR',serif; font-size:var(--fs-6); font-weight:600; color:var(--text); text-align:center; flex:1; min-width:0; }
+  .arch-nav-sub { font-family:'DM Mono',monospace; font-size:var(--fs-3); color:var(--muted); font-weight:400; }
+
   /* ── Papers tab ──────────────────────────────────────────────────────────── */
   .paper-top-bar { display:flex; flex-direction:column; gap:var(--sp2); margin-bottom:var(--sp4); }
   .paper-search-wrap { position:relative; }
@@ -525,6 +533,19 @@
   const now = new Date();
   document.getElementById('hdate').textContent = now.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
 
+  // ── Archive date index (cached) ──────────────────────────────────────────
+  let _archiveDates = null;
+  async function getArchiveDates() {
+    if (_archiveDates) return _archiveDates;
+    try {
+      const res = await fetch('archive/index.json?t=' + Date.now());
+      if (!res.ok) throw new Error();
+      const { dates } = await res.json();
+      _archiveDates = [...dates].sort();
+      return _archiveDates;
+    } catch { return []; }
+  }
+
   // ── Theme cycling ────────────────────────────────────────────────────────
   const THEMES = ['editorial','dark','minimal'];
   const THEME_LABELS = {editorial:'에디토리얼', dark:'다크', minimal:'미니멀'};
@@ -556,17 +577,32 @@
   }
 
   // 특정 날짜 아카이브 열기
+  let _currentArchiveDate = null;
   async function openArchiveDate(date) {
+    _currentArchiveDate = date;
     const panel = document.getElementById('panel-archive');
     panel.innerHTML = '<div class="loading"><div class="spinner"></div><p>불러오는 중...</p></div>';
     try {
-      const res = await fetch(`archive/${date}.json?t=` + Date.now());
+      const [archDates, res] = await Promise.all([
+        getArchiveDates(),
+        fetch(`archive/${date}.json?t=` + Date.now())
+      ]);
       if (!res.ok) throw new Error();
       const data = await res.json();
       const s = data.sections || {};
       const [y, m, d] = date.split('-');
       const weekday = new Date(date).toLocaleDateString('ko-KR', { weekday: 'long' });
       let activeSection = 'econ';
+
+      const idx = archDates.indexOf(date);
+      const prevDate = idx > 0 ? archDates[idx - 1] : null;
+      const nextDate = idx < archDates.length - 1 ? archDates[idx + 1] : null;
+
+      function fmtShort(d) {
+        const [, mm, dd] = d.split('-');
+        const wd = new Date(d).toLocaleDateString('ko-KR', { weekday: 'short' });
+        return `${parseInt(mm)}/${parseInt(dd)} (${wd})`;
+      }
 
       function renderArchiveSection(secId) {
         const sectionMap = { econ: s.econ, pol: s.politics, con: s.consumer };
@@ -588,10 +624,17 @@
         const tabs = [['econ','경제 상황'],['pol','정치·사회'],['con','소비자 이슈']].map(([id,label]) =>
           `<button class="arch-detail-tab ${id===activeSection?'on':''}" onclick="archSwitchTab('${id}',this)">${label}</button>`
         ).join('');
+        const prevBtn = prevDate
+          ? `<button class="arch-nav-btn" onclick="openArchiveDate('${prevDate}')">← ${fmtShort(prevDate)}</button>`
+          : `<button class="arch-nav-btn" disabled>← 이전</button>`;
+        const nextBtn = nextDate
+          ? `<button class="arch-nav-btn" onclick="openArchiveDate('${nextDate}')">${fmtShort(nextDate)} →</button>`
+          : `<button class="arch-nav-btn" disabled>다음 →</button>`;
         panel.innerHTML = `
-          <div class="arch-header">
-            <div class="arch-title">${m}월 ${parseInt(d)}일 (${weekday}) 브리핑</div>
-            <button class="arch-back" onclick="toggleSidePanel()">← 목록으로</button>
+          <div class="arch-nav">
+            ${prevBtn}
+            <div class="arch-nav-center">${parseInt(m)}월 ${parseInt(d)}일 (${weekday})<br><span class="arch-nav-sub">${y}</span></div>
+            ${nextBtn}
           </div>
           <div class="arch-detail-tabs">${tabs}</div>
           <div id="arch-content">${renderArchiveSection(activeSection)}</div>`;
@@ -610,6 +653,18 @@
       panel.innerHTML = '<div class="empty"><p>브리핑을 불러오지 못했어요.</p></div>';
     }
   }
+
+  document.addEventListener('keydown', async function(e) {
+    if (!_currentArchiveDate) return;
+    if (!document.getElementById('panel-archive')?.classList.contains('on')) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    const dates = await getArchiveDates();
+    const idx = dates.indexOf(_currentArchiveDate);
+    if (e.key === 'ArrowLeft' && idx > 0) openArchiveDate(dates[idx - 1]);
+    if (e.key === 'ArrowRight' && idx < dates.length - 1) openArchiveDate(dates[idx + 1]);
+  });
 
   function renderSection(id, data) {
     const tc = id === 'econ' ? '' : id === 'pol' ? 'pol' : 'con';
