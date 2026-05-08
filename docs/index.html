@@ -128,7 +128,7 @@
   .sum-text { font-size:var(--fs-5); color:var(--muted); line-height:1.85; font-weight:300; }
 
   /* ── Card grid ───────────────────────────────────────────────────────────── */
-  .news-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:20px; }
+  .news-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:20px; }
   @media (max-width:700px) { .news-grid { grid-template-columns:1fr; } }
   .card-hover { transition:box-shadow .3s var(--ease),transform .3s var(--ease),border-color .3s var(--ease); }
   .card-hover:hover { box-shadow:0 8px 40px rgba(0,0,0,.35) !important; transform:translateY(-4px); border-color:rgba(255,255,255,.15) !important; }
@@ -221,7 +221,7 @@
   .arch-title { font-family:'Pretendard',sans-serif; font-size:var(--fs-6); font-weight:600; color:var(--text); }
   .arch-back { display:inline-flex; align-items:center; gap:var(--sp1); font-size:var(--fs-4); color:var(--accent); border:1px solid var(--border); border-radius:12px; padding:var(--sp2) var(--sp3); background:var(--surface); backdrop-filter:blur(12px); cursor:pointer; text-decoration:none; font-family:'Pretendard',sans-serif; transition:background var(--t-micro),box-shadow var(--t-micro); min-height:44px; }
   .arch-back:hover { background:rgba(255,255,255,.08); box-shadow:var(--sh-xs); }
-  .arch-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:var(--sp3); }
+  .arch-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:var(--sp3); }
   .arch-item { background:var(--surface); backdrop-filter:blur(12px); border:1px solid var(--border); border-radius:16px; padding:var(--sp3) var(--sp4); cursor:pointer; transition:box-shadow var(--t-std),border-color var(--t-std),transform var(--t-std); display:flex; flex-direction:column; gap:var(--sp1); }
   .arch-item:hover { box-shadow:var(--sh-sm); border-color:rgba(255,255,255,.15); transform:translateY(-2px); }
   .arch-item-date { font-family:'Pretendard',sans-serif; font-size:var(--fs-5); font-weight:600; color:var(--text); }
