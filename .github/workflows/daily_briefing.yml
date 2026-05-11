@@ -33,3 +33,37 @@ jobs:
           FIREBASE_DB_URL: ${{ secrets.FIREBASE_DB_URL }}
           PAGES_URL: ${{ secrets.PAGES_URL }}
         run: python scripts/send_notifications.py
+
+  analyze-companies:
+    needs: generate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - name: 월요일 확인 (KST)
+        id: check
+        run: |
+          DAY=$(TZ=Asia/Seoul date +%u)
+          echo "is_monday=$( [ "$DAY" = "1" ] && echo true || echo false )" >> $GITHUB_OUTPUT
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.is_monday == 'true'
+      - run: git pull origin main
+        if: steps.check.outputs.is_monday == 'true'
+      - uses: actions/setup-python@v5
+        if: steps.check.outputs.is_monday == 'true'
+        with:
+          python-version: "3.11"
+      - run: pip install anthropic
+        if: steps.check.outputs.is_monday == 'true'
+      - name: 기업 분석 생성
+        if: steps.check.outputs.is_monday == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scripts/analyze_companies.py
+      - name: 커밋 푸시
+        if: steps.check.outputs.is_monday == 'true'
+        run: |
+          git config --global user.name "Company Bot"
+          git config --global user.email "bot@briefing"
+          git add docs/companies.json docs/companies-archive/
+          git diff --staged --quiet || git commit -m "기업 분석 업데이트: $(date +'%Y-%m-%d')"
+          git push
