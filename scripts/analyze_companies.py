@@ -10,16 +10,38 @@ KST = timezone(timedelta(hours=9))
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "docs", "companies.json")
 
 INDUSTRIES = [
-    {"id": "bigtech", "name": "빅테크"},
-    {"id": "retail",  "name": "유통"},
-    {"id": "adtech",  "name": "광고/마케팅"},
+    {"id": "tech",     "name": "테크/플랫폼"},
+    {"id": "retail",   "name": "유통/이커머스"},
+    {"id": "consumer", "name": "소비재/라이프스타일"},
 ]
 
-COMPANIES = [
-    {"id": "apple",   "name": "Apple",           "name_ko": "애플",  "ticker": "AAPL", "country": "미국", "industry_id": "bigtech"},
-    {"id": "coupang", "name": "Coupang",          "name_ko": "쿠팡",  "ticker": "CPNG", "country": "한국", "industry_id": "retail"},
-    {"id": "meta",    "name": "Meta Platforms",   "name_ko": "메타",  "ticker": "META", "country": "미국", "industry_id": "adtech"},
-]
+# 업종별 기업 풀 — 매주 ISO 주차 기준으로 1개씩 로테이션
+COMPANY_POOL = {
+    "tech": [
+        {"id": "apple",   "name": "Apple",              "name_ko": "애플",       "ticker": "AAPL",   "country": "미국"},
+        {"id": "samsung", "name": "Samsung Electronics", "name_ko": "삼성전자",   "ticker": "005930", "country": "한국"},
+        {"id": "google",  "name": "Alphabet",            "name_ko": "구글",       "ticker": "GOOGL",  "country": "미국"},
+        {"id": "meta",    "name": "Meta Platforms",      "name_ko": "메타",       "ticker": "META",   "country": "미국"},
+        {"id": "naver",   "name": "Naver",               "name_ko": "네이버",     "ticker": "035420", "country": "한국"},
+        {"id": "kakao",   "name": "Kakao",               "name_ko": "카카오",     "ticker": "035720", "country": "한국"},
+    ],
+    "retail": [
+        {"id": "coupang",    "name": "Coupang",     "name_ko": "쿠팡",     "ticker": "CPNG",   "country": "한국"},
+        {"id": "oliveyoung", "name": "Olive Young",  "name_ko": "올리브영", "ticker": "비상장",  "country": "한국"},
+        {"id": "musinsa",    "name": "Musinsa",      "name_ko": "무신사",   "ticker": "비상장",  "country": "한국"},
+        {"id": "ssg",        "name": "Shinsegae",    "name_ko": "신세계",   "ticker": "004170", "country": "한국"},
+        {"id": "kurly",      "name": "Kurly",        "name_ko": "컬리",     "ticker": "비상장",  "country": "한국"},
+        {"id": "costco",     "name": "Costco",       "name_ko": "코스트코", "ticker": "COST",   "country": "미국"},
+    ],
+    "consumer": [
+        {"id": "amore",     "name": "Amorepacific",   "name_ko": "아모레퍼시픽", "ticker": "090430", "country": "한국"},
+        {"id": "nike",       "name": "Nike",           "name_ko": "나이키",       "ticker": "NKE",    "country": "미국"},
+        {"id": "starbucks",  "name": "Starbucks",      "name_ko": "스타벅스",     "ticker": "SBUX",   "country": "미국"},
+        {"id": "cj",         "name": "CJ CheilJedang", "name_ko": "CJ제일제당",   "ticker": "097950", "country": "한국"},
+        {"id": "lghh",       "name": "LG H&H",         "name_ko": "LG생활건강",   "ticker": "051900", "country": "한국"},
+        {"id": "dyson",      "name": "Dyson",          "name_ko": "다이슨",       "ticker": "비상장",  "country": "영국"},
+    ],
+}
 
 
 def analyze_company(client: anthropic.Anthropic, company: dict) -> dict:
@@ -70,9 +92,21 @@ def main():
         raise SystemExit("ANTHROPIC_API_KEY 환경변수가 필요합니다.")
 
     client = anthropic.Anthropic(api_key=api_key)
+
+    # ISO 주차 기준 로테이션: 업종별 풀에서 1개씩 선택
+    today = datetime.now(KST)
+    week_num = today.isocalendar()[1]
+    selected_companies = []
+    for ind in INDUSTRIES:
+        pool = COMPANY_POOL[ind["id"]]
+        idx = week_num % len(pool)
+        picked = pool[idx]
+        selected_companies.append({**picked, "industry_id": ind["id"]})
+        print(f"[주차 {week_num}] {ind['name']}: {picked['name_ko']} (인덱스 {idx}/{len(pool)})")
+
     industry_map = {ind["id"]: {**ind, "companies": []} for ind in INDUSTRIES}
 
-    for company in COMPANIES:
+    for company in selected_companies:
         print(f"분석 중: {company['name_ko']} ({company['name']})...")
         try:
             analysis = analyze_company(client, company)
