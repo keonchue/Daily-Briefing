@@ -58,6 +58,8 @@ jobs:
         if: steps.check.outputs.is_monday == 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
         run: python scripts/analyze_companies.py
       - name: 커밋 푸시
         if: steps.check.outputs.is_monday == 'true'
