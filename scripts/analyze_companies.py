@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""기업 분석 자동 생성 스크립트 (Claude API 사용)"""
+"""기업 분석 자동 생성 스크립트 — 매주 Claude가 새로운 기업을 선정·분석"""
 
 import os
 import json
@@ -8,44 +8,74 @@ from datetime import datetime, timezone, timedelta
 
 KST = timezone(timedelta(hours=9))
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "docs", "companies.json")
-
-INDUSTRIES = [
-    {"id": "tech",     "name": "테크/플랫폼"},
-    {"id": "retail",   "name": "유통/이커머스"},
-    {"id": "consumer", "name": "소비재/라이프스타일"},
-]
-
-# 업종별 기업 풀 — 매주 ISO 주차 기준으로 1개씩 로테이션
-COMPANY_POOL = {
-    "tech": [
-        {"id": "apple",   "name": "Apple",              "name_ko": "애플",       "ticker": "AAPL",   "country": "미국"},
-        {"id": "samsung", "name": "Samsung Electronics", "name_ko": "삼성전자",   "ticker": "005930", "country": "한국"},
-        {"id": "google",  "name": "Alphabet",            "name_ko": "구글",       "ticker": "GOOGL",  "country": "미국"},
-        {"id": "meta",    "name": "Meta Platforms",      "name_ko": "메타",       "ticker": "META",   "country": "미국"},
-        {"id": "naver",   "name": "Naver",               "name_ko": "네이버",     "ticker": "035420", "country": "한국"},
-        {"id": "kakao",   "name": "Kakao",               "name_ko": "카카오",     "ticker": "035720", "country": "한국"},
-    ],
-    "retail": [
-        {"id": "coupang",    "name": "Coupang",     "name_ko": "쿠팡",     "ticker": "CPNG",   "country": "한국"},
-        {"id": "oliveyoung", "name": "Olive Young",  "name_ko": "올리브영", "ticker": "비상장",  "country": "한국"},
-        {"id": "musinsa",    "name": "Musinsa",      "name_ko": "무신사",   "ticker": "비상장",  "country": "한국"},
-        {"id": "ssg",        "name": "Shinsegae",    "name_ko": "신세계",   "ticker": "004170", "country": "한국"},
-        {"id": "kurly",      "name": "Kurly",        "name_ko": "컬리",     "ticker": "비상장",  "country": "한국"},
-        {"id": "costco",     "name": "Costco",       "name_ko": "코스트코", "ticker": "COST",   "country": "미국"},
-    ],
-    "consumer": [
-        {"id": "amore",     "name": "Amorepacific",   "name_ko": "아모레퍼시픽", "ticker": "090430", "country": "한국"},
-        {"id": "nike",       "name": "Nike",           "name_ko": "나이키",       "ticker": "NKE",    "country": "미국"},
-        {"id": "starbucks",  "name": "Starbucks",      "name_ko": "스타벅스",     "ticker": "SBUX",   "country": "미국"},
-        {"id": "cj",         "name": "CJ CheilJedang", "name_ko": "CJ제일제당",   "ticker": "097950", "country": "한국"},
-        {"id": "lghh",       "name": "LG H&H",         "name_ko": "LG생활건강",   "ticker": "051900", "country": "한국"},
-        {"id": "dyson",      "name": "Dyson",          "name_ko": "다이슨",       "ticker": "비상장",  "country": "영국"},
-    ],
-}
+ARCHIVE_DIR = os.path.join(os.path.dirname(__file__), "..", "docs", "companies-archive")
 
 
-def analyze_company(client: anthropic.Anthropic, company: dict) -> dict:
-    industry_name = next(i["name"] for i in INDUSTRIES if i["id"] == company["industry_id"])
+def get_recent_companies(weeks=8):
+    """최근 N주간 분석한 기업명 목록을 아카이브에서 읽어옴"""
+    index_path = os.path.join(ARCHIVE_DIR, "index.json")
+    if not os.path.exists(index_path):
+        return []
+    with open(index_path, encoding="utf-8") as f:
+        dates = json.load(f).get("dates", [])
+    recent = []
+    for d in sorted(dates, reverse=True)[:weeks]:
+        path = os.path.join(ARCHIVE_DIR, f"{d}.json")
+        if not os.path.exists(path):
+            continue
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        for ind in data.get("industries", []):
+            for c in ind.get("companies", []):
+                name = c.get("name_ko") or c.get("name", "")
+                if name and name not in recent:
+                    recent.append(name)
+    return recent
+
+
+def pick_companies(client, recent_names):
+    """Claude에게 이번 주 분석할 기업 3개를 선정하게 함"""
+    exclude = ""
+    if recent_names:
+        exclude = f"\n\n최근 분석한 기업 (반드시 제외): {', '.join(recent_names)}"
+
+    prompt = f"""당신은 소비자학 연구자입니다. 이번 주 기업 분석 코너에 실을 기업 3개를 선정해주세요.
+
+조건:
+- 소비자와 밀접한 B2C 기업 (한국 또는 글로벌)
+- 3개 기업은 서로 다른 업종이어야 함 (예: 테크, 유통, 식품, 뷰티, 금융, 모빌리티, 엔터테인먼트, 패션 등)
+- 한국 기업과 글로벌 기업을 적절히 섞을 것
+- 소비자 관점에서 흥미로운 전략을 펼치거나, 최근 주목할 만한 움직임이 있는 기업 우선
+- 대기업뿐 아니라 성장 중인 중견·스타트업도 포함 가능{exclude}
+
+아래 JSON 배열로만 응답 (코드블록이나 다른 텍스트 없이 JSON만):
+[
+  {{"id": "영문소문자id", "name": "English Name", "name_ko": "한국어명", "ticker": "티커 또는 비상장", "country": "국가", "industry_id": "영문소문자id", "industry_name": "업종명 (한국어, 간결하게)"}},
+  {{"id": "...", "name": "...", "name_ko": "...", "ticker": "...", "country": "...", "industry_id": "...", "industry_name": "..."}},
+  {{"id": "...", "name": "...", "name_ko": "...", "ticker": "...", "country": "...", "industry_id": "...", "industry_name": "..."}}
+]"""
+
+    message = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    content = message.content[0].text.strip()
+    if "```" in content:
+        content = content.split("```")[1]
+        if content.startswith("json"):
+            content = content[4:]
+        content = content.split("```")[0].strip()
+
+    picks = json.loads(content)
+    if not isinstance(picks, list) or len(picks) < 1:
+        raise ValueError("기업 선정 결과가 비어 있음")
+    return picks[:3]
+
+
+def analyze_company(client, company, industry_name):
+    """선정된 기업 1개를 소비자 관점에서 분석"""
     prompt = f"""당신은 소비자학 연구자입니다. 다음 기업을 소비자 관점에서 분석해주세요.
 
 기업: {company['name_ko']} ({company['name']}, {company['ticker']})
@@ -93,35 +123,49 @@ def main():
 
     client = anthropic.Anthropic(api_key=api_key)
 
-    # ISO 주차 기준 로테이션: 업종별 풀에서 1개씩 선택
-    today = datetime.now(KST)
-    week_num = today.isocalendar()[1]
-    selected_companies = []
-    for ind in INDUSTRIES:
-        pool = COMPANY_POOL[ind["id"]]
-        idx = week_num % len(pool)
-        picked = pool[idx]
-        selected_companies.append({**picked, "industry_id": ind["id"]})
-        print(f"[주차 {week_num}] {ind['name']}: {picked['name_ko']} (인덱스 {idx}/{len(pool)})")
+    # 1) 최근 분석 기업 확인
+    recent = get_recent_companies(weeks=8)
+    print(f"최근 8주 분석 기업 ({len(recent)}개): {', '.join(recent) if recent else '없음'}")
 
-    industry_map = {ind["id"]: {**ind, "companies": []} for ind in INDUSTRIES}
+    # 2) Claude가 이번 주 기업 3개 선정
+    print("\n기업 선정 중...")
+    picks = pick_companies(client, recent)
+    for p in picks:
+        print(f"  → {p['name_ko']} ({p['name']}) [{p['industry_name']}]")
 
-    for company in selected_companies:
-        print(f"분석 중: {company['name_ko']} ({company['name']})...")
+    # 3) 업종 맵 구성 (선정 결과에서 동적 생성)
+    industry_map = {}
+    for p in picks:
+        iid = p["industry_id"]
+        if iid not in industry_map:
+            industry_map[iid] = {"id": iid, "name": p["industry_name"], "companies": []}
+
+    # 4) 각 기업 분석
+    for p in picks:
+        name_ko = p["name_ko"]
+        industry_name = p["industry_name"]
+        print(f"\n분석 중: {name_ko} ({p['name']})...")
         try:
-            analysis = analyze_company(client, company)
+            analysis = analyze_company(client, p, industry_name)
             company_data = {
-                **company,
+                "id": p["id"],
+                "name": p["name"],
+                "name_ko": name_ko,
+                "ticker": p["ticker"],
+                "country": p["country"],
                 **analysis,
                 "updated_at": datetime.now(KST).strftime("%Y-%m-%d"),
             }
-            del company_data["industry_id"]
-            industry_map[company["industry_id"]]["companies"].append(company_data)
+            industry_map[p["industry_id"]]["companies"].append(company_data)
             print(f"  완료 ✓")
         except Exception as e:
             print(f"  오류: {e}")
-            industry_map[company["industry_id"]]["companies"].append({
-                **company,
+            industry_map[p["industry_id"]]["companies"].append({
+                "id": p["id"],
+                "name": p["name"],
+                "name_ko": name_ko,
+                "ticker": p["ticker"],
+                "country": p["country"],
                 "updated_at": datetime.now(KST).strftime("%Y-%m-%d"),
                 "overview": "분석 데이터를 불러올 수 없습니다.",
                 "swot": {"strengths": [], "weaknesses": [], "opportunities": [], "threats": []},
@@ -129,14 +173,14 @@ def main():
                 "recent_issues": [],
             })
 
-    today = datetime.now(KST).strftime("%Y-%m-%d")
+    # 5) 결과 저장
+    today_str = datetime.now(KST).strftime("%Y-%m-%d")
     output = {
         "updated_at": datetime.now(KST).isoformat(),
-        "date": today,
+        "date": today_str,
         "industries": list(industry_map.values()),
     }
 
-    # 실제 분석이 하나라도 성공했는지 확인
     all_companies = [c for ind in output["industries"] for c in ind["companies"]]
     has_valid = any(
         c.get("overview") and c["overview"] != "분석 데이터를 불러올 수 없습니다."
@@ -148,35 +192,29 @@ def main():
     if has_valid:
         with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
             json.dump(output, f, ensure_ascii=False, indent=2)
-        print(f"완료: docs/companies.json 저장됨")
+        print(f"\n완료: docs/companies.json 저장됨")
     else:
-        print("경고: 모든 기업 분석이 실패했습니다. 기존 companies.json 유지.")
-        # 기존 파일이 없을 때만 저장 (최초 실행 시 빈 파일보다는 오류 데이터라도)
+        print("\n경고: 모든 기업 분석이 실패했습니다. 기존 companies.json 유지.")
         if not os.path.exists(OUTPUT_PATH):
             with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
                 json.dump(output, f, ensure_ascii=False, indent=2)
-            print("  (기존 파일 없어 저장)")
         return
 
-    # 아카이브 저장
-    archive_dir = os.path.join(os.path.dirname(OUTPUT_PATH), "companies-archive")
-    os.makedirs(archive_dir, exist_ok=True)
-
-    archive_path = os.path.join(archive_dir, f"{today}.json")
+    # 6) 아카이브 저장
+    os.makedirs(ARCHIVE_DIR, exist_ok=True)
+    archive_path = os.path.join(ARCHIVE_DIR, f"{today_str}.json")
     with open(archive_path, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
-    print(f"아카이브 저장됨: companies-archive/{today}.json")
+    print(f"아카이브 저장됨: companies-archive/{today_str}.json")
 
-    # 아카이브 인덱스 업데이트
-    index_path = os.path.join(archive_dir, "index.json")
+    index_path = os.path.join(ARCHIVE_DIR, "index.json")
     if os.path.exists(index_path):
         with open(index_path, encoding="utf-8") as f:
-            index = json.load(f)
-        dates = index.get("dates", [])
+            dates = json.load(f).get("dates", [])
     else:
         dates = []
-    if today not in dates:
-        dates.append(today)
+    if today_str not in dates:
+        dates.append(today_str)
         dates.sort()
     with open(index_path, "w", encoding="utf-8") as f:
         json.dump({"dates": dates}, f, ensure_ascii=False)
